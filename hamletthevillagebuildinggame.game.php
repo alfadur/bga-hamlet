@@ -163,7 +163,11 @@ class HamletTheVillageBuildingGame extends Table
     static function createBuildings(): void
     {
         self::placeBuilding(Building::CHURCH, [0, 0, 0], 0, false);
-        self::placeBuilding(Building::TOWN_HALL, [-3, 3, 0], 0, true);
+        self::placeBuilding(Building::WOODCUTTER, [-3, 2, 1], 2, false);
+        self::placeBuilding(Building::QUARRY, [0, -1, 2], 1, false);
+        self::placeBuilding(Building::FARM, [3, 1, -3], 3, false);
+        self::placeBuilding(Building::MARKET, [4, 0, -4], 0, false);
+        self::placeBuilding(Building::TOWN_HALL, [0, 3, -3], 0, false);
     }
 
     protected function getAllDatas()

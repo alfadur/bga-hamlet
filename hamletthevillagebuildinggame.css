@@ -54,6 +54,55 @@
     font-size: 20px;
 }
 
+.hamlet-edge {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border-radius: 6px;
+}
+
+.hamlet-edge-x {
+    left: calc(3 * var(--space-width) / 4 - 16px);
+    top: calc(var(--space-height) / 2);
+}
+
+.hamlet-edge-y {
+    left: calc(var(--space-width) / 2 - 7px);
+    top: calc(var(--space-height) - 16px);
+}
+
+.hamlet-edge-z {
+    left: calc(var(--space-width) / 4);
+    top: calc(var(--space-height) / 2);
+}
+
+.hamlet-board-space[data-orientation="1"] .hamlet-edge-x {
+    top: calc(var(--space-height) / 2 - 16px);
+    left: calc(var(--space-width) / 4);
+}
+
+.hamlet-board-space[data-orientation="1"] .hamlet-edge-y {
+    left: calc(var(--space-width) / 2 - 7px);
+    top: 0;
+}
+
+.hamlet-board-space[data-orientation="1"] .hamlet-edge-z {
+    top: calc(var(--space-height) / 2 - 16px);
+    left: calc(3 * var(--space-width) / 4 - 16px);
+}
+
+.hamlet-edge[data-edge="1"] {
+    background-color: darkorange;
+}
+
+.hamlet-edge[data-edge="2"] {
+    background-color: forestgreen;
+}
+
+.hamlet-edge[data-edge="3"] {
+    background-color: dimgrey;
+}
+
 .hamlet-building-church {
     width: calc(var(--space-width) * 4);
     height: calc(var(--space-height) * 4);

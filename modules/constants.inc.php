@@ -85,7 +85,7 @@ const BUILDING_CELLS = [
         0, 2, -2, Edge::NONE, Edge::NONE, Edge::NONE,
         1, 2, -2, Edge::NONE, Edge::NONE, Edge::NONE,
         1, 2, -3, Edge::NONE, Edge::MOUNTAIN, Edge::NONE,
-        2, 2, -3, Edge::ROAD, Edge::NONE, Edge::NONE,
+        2, 2, -3, Edge::NONE, Edge::NONE, Edge::ROAD,
 
         -1, 3, -1, Edge::FOREST, Edge::NONE, Edge::NONE,
         -1, 3, -2, Edge::NONE, Edge::FOREST, Edge::NONE,
@@ -106,5 +106,40 @@ const BUILDING_CELLS = [
         -1, 3, -1, Edge::MOUNTAIN, Edge::NONE, Edge::NONE,
         -1, 3, -2, Edge::NONE, Edge::MOUNTAIN, Edge::NONE,
         0, 3, -2, Edge::NONE, Edge::NONE, Edge::MOUNTAIN,
-    ]
+    ],
+    Building::WOODCUTTER => [
+        0, 0, 0, Edge::FOREST, Edge::NONE, Edge::ROAD,
+        -1, 1, 0, Edge::NONE, Edge::NONE, Edge::FOREST,
+        0, 1, 0, Edge::NONE, Edge::NONE, Edge::NONE,
+        0, 1, -1, Edge::FOREST, Edge::NONE, Edge::NONE,
+        -1, 2, 0, Edge::FOREST, Edge::NONE, Edge::NONE,
+        -1, 2, -1, Edge::NONE, Edge::NONE, Edge::NONE,
+        0, 2, -1, Edge::NONE, Edge::NONE, Edge::FOREST,
+        -1, 3, -1, Edge::FOREST, Edge::NONE, Edge::FOREST,
+    ],
+    Building::QUARRY => [
+        0, 0, 0, Edge::NONE, Edge::NONE, Edge::MOUNTAIN,
+        1, 0, 0, Edge::NONE, Edge::MOUNTAIN, Edge::NONE,
+        1, 0, -1, Edge::ROAD, Edge::NONE, Edge::NONE,
+        0, 1, 0, Edge::MOUNTAIN, Edge::NONE, Edge::NONE,
+        0, 1, -1, Edge::NONE, Edge::MOUNTAIN, Edge::NONE,
+        1, 1, -1, Edge::NONE, Edge::NONE, Edge::MOUNTAIN,
+    ],
+    Building::FARM => [
+        0, 0, 0, Edge::ROAD, Edge::NONE, Edge::FOREST,
+        -1, 1, 0, Edge::NONE, Edge::FOREST, Edge::FOREST,
+        0, 1, 0, Edge::NONE, Edge::NONE, Edge::NONE,
+        0, 1, -1, Edge::FOREST, Edge::FOREST, Edge::NONE,
+    ],
+    Building::MARKET => [
+        0, 0, 0, Edge::ROAD, Edge::NONE, Edge::FOREST,
+        -1, 1, 0, Edge::NONE, Edge::NONE, Edge::FOREST,
+        0, 1, 0, Edge::NONE, Edge::NONE, Edge::NONE,
+        0, 1, -1, Edge::FOREST, Edge::NONE, Edge::NONE,
+        -2, 2, 0, Edge::NONE, Edge::FOREST, Edge::ROAD,
+        -1, 2, 0, Edge::NONE, Edge::NONE, Edge::NONE,
+        -1, 2, -1, Edge::NONE, Edge::FOREST, Edge::NONE,
+        0, 2, -1, Edge::NONE, Edge::NONE, Edge::NONE,
+        0, 2, -2, Edge::FOREST, Edge::FOREST, Edge::NONE
+    ],
 ];

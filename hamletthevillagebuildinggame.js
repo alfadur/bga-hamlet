@@ -15,14 +15,17 @@ function createElement(parent, html) {
     return parent.lastChild;
 }
 
-function createSpace({x, y, z, building_id: building}) {
+function createSpace({x, y, z, edge_x, edge_y, edge_z, building_id: building}) {
     const orientation = parseInt(x) + parseInt(y) + parseInt(z);
-    const style=`--cx: ${parseInt(z) - parseInt(x)}; --cy: ${y}`;
+    const style=`--cx: ${parseInt(x) - parseInt(z)}; --cy: ${y}`;
     return `<div class="hamlet-board-space" 
-        data-x="${x}" data-y="${y}" data-z="${z}"    
-        data-orientation="${orientation}"
-        data-building="${building}"
-        style="${style}">
+            data-x="${x}" data-y="${y}" data-z="${z}"    
+            data-orientation="${orientation}"
+            data-building="${building}"
+            style="${style}">
+        <div class="hamlet-edge hamlet-edge-x" data-edge="${edge_x}"></div>
+        <div class="hamlet-edge hamlet-edge-y" data-edge="${edge_y}"></div>
+        <div class="hamlet-edge hamlet-edge-z" data-edge="${edge_z}"></div>
     </div>`;
 }
 
@@ -49,9 +52,9 @@ define([
 
         const bounds = data.board.reduce(
             (bounds, space) => ({
-                minX: Math.min(bounds.minX, parseInt(space.z) - parseInt(space.x)),
+                minX: Math.min(bounds.minX, parseInt(space.x) - parseInt(space.z)),
                 minY: Math.min(bounds.minY, parseInt(space.y)),
-                maxX: Math.max(bounds.maxX, parseInt(space.z) - parseInt(space.x)),
+                maxX: Math.max(bounds.maxX, parseInt(space.x) - parseInt(space.z)),
                 maxY: Math.max(bounds.maxY, parseInt(space.y)),
             }), {
                 minX: Number.MAX_SAFE_INTEGER,
