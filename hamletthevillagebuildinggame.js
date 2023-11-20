@@ -8,9 +8,28 @@
  * -----
  */
 
+function createElement(parent, html) {
+    const element = document.createElement("div");
+    parent.appendChild(element);
+    element.outerHTML = html;
+    return parent.lastChild;
+}
+
+function createSpace({x, y, z, building_id: building}) {
+    const orientation = parseInt(x) + parseInt(y) + parseInt(z);
+    const style=`--cx: ${parseInt(z) - parseInt(x)}; --cy: ${y}`;
+    return `<div class="hamlet-board-space" 
+        data-x="${x}" data-y="${y}" data-z="${z}"    
+        data-orientation="${orientation}"
+        data-building="${building}"
+        style="${style}">
+    </div>`;
+}
+
 define([
     "dojo","dojo/_base/declare",
-    "ebg/core/gamegui"
+    "ebg/core/gamegui",
+    "ebg/counter"
 ], (dojo, declare) => declare("bgagame.hamletthevillagebuildinggame", ebg.core.gamegui, {
     constructor() {
         console.log("hamletthevillagebuildinggame constructor");
@@ -22,6 +41,30 @@ define([
         for (const player_id of Object.keys(data.players)) {
             const player = data.players[player_id];
         }
+
+        const board =document.getElementById("hamlet-board");
+        for (const space of data.board) {
+            createElement(board, createSpace(space));
+        }
+
+        const bounds = data.board.reduce(
+            (bounds, space) => ({
+                minX: Math.min(bounds.minX, parseInt(space.z) - parseInt(space.x)),
+                minY: Math.min(bounds.minY, parseInt(space.y)),
+                maxX: Math.max(bounds.maxX, parseInt(space.z) - parseInt(space.x)),
+                maxY: Math.max(bounds.maxY, parseInt(space.y)),
+            }), {
+                minX: Number.MAX_SAFE_INTEGER,
+                minY: Number.MAX_SAFE_INTEGER,
+                maxX: Number.MIN_SAFE_INTEGER,
+                maxY: Number.MIN_SAFE_INTEGER
+            }
+        )
+
+        board.style.setProperty("--minCx", bounds.minX);
+        board.style.setProperty("--minCy", bounds.minY);
+        board.style.setProperty("--maxCx", bounds.maxX);
+        board.style.setProperty("--maxCy", bounds.maxY);
 
         this.setupNotifications();
 

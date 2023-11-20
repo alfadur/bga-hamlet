@@ -3,9 +3,12 @@
 class_alias('HamletTheVillageBuildingGame', 'GameImplName');
 
 class GameState {
+    function state_id(): string { return 0; }
     function nextState(string $transition): void {}
     function prevState(string $transition): void {}
+    function jumpToState(int $state): void {}
     function checkPossibleAction(string $action): void {}
+    function changeActivePlayer(string $playerId): void {}
     function setAllPlayersMultiactive(): void {}
     function setPlayersMultiactive(array $players, string $stateTransition, bool $overwrite = false): void {}
     function setPlayerNonMultiactive(string $player, string $stateTransition): void {}
@@ -20,31 +23,38 @@ class Table {
         $this->gamestate = new GameState();
     }
     static function reloadPlayersBasicInfos(): void {}
-    static function loadPlayersBasicInfos(): array { return []; }
+    function loadPlayersBasicInfos(): array { return []; }
+    static function reattributeColorsBasedOnPreferences(array $players, array $colors): void {}
     static function getGameinfos(): array {return [];}
     static function getPlayersNumber(): int { return 0; }
     static function getActivePlayerId(): string { return ''; }
+    static function getActivePlayerName(): string { return ''; }
     static function getCurrentPlayerId(): string { return ''; }
     static function getPlayerNameById(string $playerId): string { return ''; }
     static function getPlayerNoById(string $playerId): int { return 0; }
     static function isSpectator(): bool { return false; }
     static function isCurrentPlayerZombie(): bool { return false; }
     static function activeNextPlayer(): void {}
+    static function activePrevPlayer(): void {}
     static function DbQuery(string $query): void {}
     static function DbAffectedRow(): int { return 0; }
-    static function getCollectionFromDb(string $query): array { return []; }
-    static function getObjectFromDb(string $query): ?object { return null; }
-    static function getObjectListFromDb(string $query): array { return []; }
+    static function getCollectionFromDb(string $query, bool $singleColumn = false): array { return []; }
+    static function getObjectFromDb(string $query): ?array { return null; }
+    static function getNonEmptyObjectFromDb(string $query): array { return []; }
+    static function getObjectListFromDb(string $query, bool $singleColumn = false): array { return []; }
     static function getUniqueValueFromDb(string $query): ?string { return null; }
 
     static function initGameStateLabels(array $array): void {}
-    static function setInitialGameStateValue(string $name, int $value): void {}
+    static function setGameStateInitialValue(string $name, int $value): void {}
     static function incGameStateValue(string $name, int $value): void {}
     static function setGameStateValue(string $name, int $value): void {}
-    static function getGameStateValue(string $name): int { return 0; }
+    static function getGameStateValue(string $name): string { return ''; }
     static function checkAction(string $action): void {}
     static function notifyAllPlayers(string $name, string $text, array $args): void {}
-    static function notifyPlayers(string $playerId, string $name, string $text, array $args): void {}
+    static function notifyPlayer(string $playerId, string $name, string $text, array $args): void {}
+
+    static function debug(string $message) {}
+    static function dump(string $message, $value) {}
 }
 
 class game_view_page {
@@ -73,7 +83,7 @@ const AT_bool = 0;
 const AT_enum = 0;
 const AT_alphanum = 0;
 const AT_alphanum_dash = 0;
-const AT_numberllist = 0;
+const AT_numberlist = 0;
 const AT_base64 = 0;
 const AT_json = 0;
 

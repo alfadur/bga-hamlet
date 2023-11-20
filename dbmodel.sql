@@ -7,10 +7,10 @@
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
 -- -----
 
-CREATE TABLE IF NOT EXISTS `buildings`(
-    `buildilng_id` TINYINT UNSIGNED NOT NULL,
+CREATE TABLE IF NOT EXISTS `building`(
+    `building_id` TINYINT UNSIGNED NOT NULL,
     PRIMARY KEY(`building_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `board`(
     `x` TINYINT NOT NULL,
@@ -21,5 +21,5 @@ CREATE TABLE IF NOT EXISTS `board`(
     `edge_z` TINYINT NOT NULL,
     `building_id` TINYINT UNSIGNED NOT NULL,
     PRIMARY KEY(`x`, `y`, `z`),
-    FOREIGN KEY(`building_id`) REFERENCES `buildings`(`building_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+    FOREIGN KEY(`building_id`) REFERENCES `building`(`building_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

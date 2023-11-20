@@ -6,15 +6,7 @@
   * 
   * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
   * See http://en.boardgamearena.com/#!doc/Studio for more information.
-  * -----
-  * 
-  * hamletthevillagebuildinggame.game.php
-  *
-  * This is the main file for your game logic.
-  *
-  * In this PHP file, you are going to defines the rules of the game.
-  *
-  */
+    */
 
 
 require_once(APP_GAMEMODULE_PATH.'module/table/table.game.php');
@@ -55,27 +47,29 @@ class HamletTheVillageBuildingGame extends Table
         $query = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES $args";
         self::DbQuery($query);
 
-        self::reattributeColorsBasedOnPreferences( $players, $data['player_colors'] );
+        self::reattributeColorsBasedOnPreferences($players, $data['player_colors']);
         self::reloadPlayersBasicInfos();
         
         /************ Start the game initialization *****/
 
-        self::setInitialGameStateValue(Globals::MOVED_DONKEYS, 0);
+        self::setGameStateInitialValue(Globals::MOVED_DONKEYS, 0);
 
         self::createBuildings();
 
         $this->activeNextPlayer();
     }
 
-    static function placeBuilding(int $buildingId, array $values, int $orientation, bool $positionCheck = true): array
+    static function placeBuilding(int $buildingId, array $position, int $orientation, bool $positionCheck = true): array
     {
-        [$x, $y, $z] = $values;
+        self::DbQuery("INSERT INTO building(building_id) VALUES ($buildingId)");
 
-        if (abs($x + $y + $z) <> $orientation % 2) {
+        [$x, $y, $z] = $position;
+
+        if ($x + $y + $z !== ($orientation & 0b1)) {
             throw new BgaUserException('Invalid orientation');
         }
 
-        $sign = 1 - ($orientation % 2) * 2;
+        $sign = 1 - ($orientation & 0b1) * 2;
         $indices = [
             $orientation % 3,
             ($orientation + 1) % 3,
@@ -105,34 +99,38 @@ class HamletTheVillageBuildingGame extends Table
             $edgeY = $cell[$indices[1] + 3];
             $edgeZ = $cell[$indices[2] + 3];
 
-            $values[] = "($cellX, $cellY, $cellZ, $edgeX, $edgeY, $edgeZ)";
+            $values[] = "($cellX, $cellY, $cellZ, $edgeX, $edgeY, $edgeZ, $buildingId)";
+
+            $coords[] = [$cellX, $cellY, $cellZ, $edgeX, $edgeY, $edgeZ];
 
             $spaceChecks[] =
                 "x = $cellX AND y = $cellY AND z = $cellZ";
 
-            $neighborX = $cellX + 1 - 2 * abs($cellX %  2);
-            $neighborY = $cellY + 1 - 2 * abs($cellY %  2);
-            $neighborZ = $cellZ + 1 - 2 * abs($cellZ %  2);
+            $cellSign = 1 - 2 * ($cellX + $cellY + $cellZ);
 
             if ($edgeX <> Edge::NONE) {
+                $neighborX = $cellX + $cellSign;
                 $connectionChecks[] = "x = $neighborX AND y = $cellY AND z = $cellZ AND edge_x <> $none";
+
                 $check = $edgeX === Edge::ROAD ? '<>' : '=';
                 $roadChecks[] = "x = $neighborX AND y = $cellY AND z = $cellZ AND edge_x $check $road";
             }
 
             if ($edgeY <> Edge::NONE) {
-                $connectionChecks = "x = $cellX AND y = $neighborY AND z = $cellZ AND edge_y <> $none";
+                $neighborY = $cellY + $cellSign;
+                $connectionChecks[] = "x = $cellX AND y = $neighborY AND z = $cellZ AND edge_y <> $none";
+
                 $check = $edgeY === Edge::ROAD ? '<>' : '=';
                 $roadChecks[] = "x = $cellX AND y = $neighborY AND z = $cellZ AND edge_y $check $road";
             }
 
             if ($edgeZ <> Edge::NONE) {
+                $neighborZ = $cellZ + $cellSign;
                 $connectionChecks[] = "x = $cellX AND y = $cellY AND z = $neighborZ AND edge_z <> $none";
+
                 $check = $edgeZ === Edge::ROAD ? '<>' : '=';
                 $roadChecks[] = "x = $cellX AND y = $cellY AND z = $neighborZ AND edge_z $check $road";
             }
-
-            $coords[] = [$cellX, $cellY, $cellZ, $edgeX, $edgeY, $edgeZ];
         }
 
         if ($positionCheck) {
@@ -143,7 +141,7 @@ class HamletTheVillageBuildingGame extends Table
                 SELECT 
                     (SELECT COUNT(*) FROM board WHERE $spaceArgs) AS occupied,
                     (SELECT COUNT(*) FROM board WHERE $connectionArgs) AS connections,
-                    (SELECT COUNT(*) FROM board WHERE $roadArgs) AS roads,
+                    (SELECT COUNT(*) FROM board WHERE $roadArgs) AS roads
                 EOF);
             if ((int)$roadChecks['occupied'] > 0) {
                 throw new BgaUserException('Occupied space');
@@ -157,23 +155,24 @@ class HamletTheVillageBuildingGame extends Table
         }
 
         $args = implode(',', $values);
-        self::DbQuery("INSERT INTO board(x, y, z, edge_x, edge_y, edge_z) VALUES $args");
+        self::DbQuery("INSERT INTO board(x, y, z, edge_x, edge_y, edge_z, building_id) VALUES $args");
 
         return $coords;
     }
 
     static function createBuildings(): void
     {
-        self::placeBuilding(Building::CHURCH, [0, 0, 0], 0);
+        self::placeBuilding(Building::CHURCH, [0, 0, 0], 0, false);
+        self::placeBuilding(Building::TOWN_HALL, [-3, 3, 0], 0, true);
     }
 
     protected function getAllDatas()
     {
         $result = [];
 
-        $sql = 'SELECT player_id id, player_score score FROM player ';
-        $result['players'] = self::getCollectionFromDb($sql);
-        $result['board'] = self::getObjectListFromDb('SELECT x, y, z FROM board');
+        $query = 'SELECT player_id AS id, player_score AS score FROM player ';
+        $result['players'] = self::getCollectionFromDb($query);
+        $result['board'] = self::getObjectListFromDb('SELECT * FROM board');
 
         return $result;
     }
@@ -191,6 +190,11 @@ class HamletTheVillageBuildingGame extends Table
     function moveDonkey(int $id, int $tile): void
     {
 
+    }
+
+    function stNextTurn(): void
+    {
+        $this->gamestate->nextState('');
     }
 
     function zombieTurn($state, $active_player)

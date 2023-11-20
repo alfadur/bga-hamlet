@@ -13,60 +13,48 @@
  *
  */
 
-/*
-    This is the CSS stylesheet of your game User Interface.
-    
-    Styles defined on this file will be applied to the HTML elements you define in your
-    HTML template (hamletthevillagebuildinggame_hamletthevillagebuildinggame.tpl), and to HTML elements you create dynamically
-    (in hamletthevillagebuildinggame.js).
-    
-    Usually, you are using CSS to:
-    
-    1°) define the overall layout of your game
-        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+#hamlet-board {
+    --space-width: 97px;
+    --space-height: 84px;
 
-    2°) create your CSS-sprites:
-        All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
-        display these images correctly (see example below).
-    
-    3°) ... anything else:
-        It is really easy to add and remove CSS classes dynamically from your Javascript with
-        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
-        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
-        very often, using CSS classes for the logic of your user interface allow you to do complex
-        thing easily.
-        
-        
-     Note: on the production platform, this file will be compressed and comments will be removed.
-           Consequently, don't hesitate to put as many comments as necessary.
-*/
+    position: relative;
+    width: 100%;
+    height: calc((var(--maxCy) - var(--minCy) + 1) * var(--space-height));
 
+    translate:
+        calc(50% - var(--space-width) * (var(--maxCx) + var(--minCx) + 1) / 4 )
+        calc(50% - var(--space-height) * (var(--maxCy) + var(--minCy) + 1) / 2 );
+}
 
-/* Note: you must not use any @import directive */
+.hamlet-board-space {
+    --cx: 0;
+    --cy: 0;
 
+    position: absolute;
+    width: var(--space-width);
+    height: var(--space-height);
+    left: calc(var(--cx) * var(--space-width) / 2);
+    top: calc(var(--cy) * var(--space-height));
+    background: red;
+    clip-path: polygon(0 100%, 100% 100%, 50% 0);
 
-/********* You can start writing your CSS below this line: **********/
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
+.hamlet-board-space[data-orientation="1"] {
+    clip-path: polygon(0 0%, 50% 100%, 100% 0);
+}
 
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
+.hamlet-board-space:after {
+    display: block;
+    content: attr(data-building);
+    color: white;
+    font-size: 20px;
+}
 
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
-
-
-
-
+.hamlet-building-church {
+    width: calc(var(--space-width) * 4);
+    height: calc(var(--space-height) * 4);
+}
