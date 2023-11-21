@@ -111,11 +111,15 @@
     --cx: 0;
     --cy: 0;
     --orientation: 0;
+    --sign: 0;
 
     position: absolute;
     left: calc(var(--cx) * var(--space-width) / 2);
-    top: calc(var(--cy) * var(--space-height));
+    top: calc((var(--cy) - var(--sign) * 0.288675) * var(--space-height));
     transform: rotate(calc(var(--orientation) * 60deg));
+    transform-origin:
+        calc(var(--space-width) / 2)
+        calc(var(--space-height) - var(--space-width) * 0.288675);
     transition:
         transform 250ms ease-out,
         left 250ms ease-out,

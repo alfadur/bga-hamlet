@@ -162,8 +162,12 @@ define([
                         });
                     }
 
-                    this.addActionButton("hamlet.rotate", "🔁", () => {
-                        this.rotateBuilding();
+                    this.addActionButton("hamlet-rotate", "🔁", () => {
+                        this.rotateBuilding(1);
+                    });
+
+                    this.addActionButton("hamlet-unrotate", "🔄", () => {
+                        this.rotateBuilding(-1);
                     });
 
                     break;
@@ -172,12 +176,13 @@ define([
         }
     },
 
-    rotateBuilding() {
+    rotateBuilding(steps) {
         const building = this.currentBuilding;
         if (building) {
             const sum = this.currentOrientation & 0b1;
+            const shift = 1 - sum * 2;
 
-            const bounds = getBounds(this.spaces);
+            /*const bounds = getBounds(this.spaces);
             const tx = (bounds.minX + bounds.maxX) >> 1;
             const y = (bounds.minY + bounds.maxY) >> 1;
 
@@ -188,14 +193,20 @@ define([
                 x: this.currentSpace.x + x - z,
                 y: this.currentSpace.y + y - x,
                 z: this.currentSpace.z + z - y
-            };
+            };*/
 
-            this.currentOrientation = (this.currentOrientation + 1) % 6;
+            this.currentSpace.x += shift;
+            this.currentOrientation =
+                (this.currentOrientation + steps + 6) % 6;
             const cx = this.currentSpace.x - this.currentSpace.z;
             const cy = this.currentSpace.y;
+
             building.style.setProperty("--cx", cx.toString());
             building.style.setProperty("--cy", cy.toString());
-            building.style.setProperty("--orientation", this.currentOrientation.toString());
+            building.style.setProperty("--orientation",
+                this.currentOrientation.toString());
+            building.style.setProperty("--sign",
+                (this.currentOrientation & 0b1).toString());
         }
     },
 
