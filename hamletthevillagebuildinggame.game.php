@@ -19,7 +19,8 @@ class HamletTheVillageBuildingGame extends Table
         parent::__construct();
         
         self::initGameStateLabels( [
-            Globals::MOVED_DONKEYS => Globals::MOVED_DONKEYS_ID
+            Globals::MOVED_DONKEYS => Globals::MOVED_DONKEYS_ID,
+            Globals::CURRENT_BUILDING => Globals::CURRENT_BUILDING_ID
         ]);
 	}
 	
@@ -52,7 +53,7 @@ class HamletTheVillageBuildingGame extends Table
         
         /************ Start the game initialization *****/
 
-        self::setGameStateInitialValue(Globals::MOVED_DONKEYS, 0);
+        self::setGameStateInitialValue(Globals::CURRENT_BUILDING, Building::TOWN_HALL);
 
         self::createBuildings();
 
@@ -162,12 +163,9 @@ class HamletTheVillageBuildingGame extends Table
 
     static function createBuildings(): void
     {
-        self::placeBuilding(Building::CHURCH, [0, 0, 0], 0, false);
-        self::placeBuilding(Building::WOODCUTTER, [-3, 2, 1], 2, false);
-        self::placeBuilding(Building::QUARRY, [0, -1, 2], 1, false);
-        self::placeBuilding(Building::FARM, [3, 1, -3], 3, false);
-        self::placeBuilding(Building::MARKET, [4, 0, -4], 0, false);
-        self::placeBuilding(Building::TOWN_HALL, [0, 3, -3], 0, false);
+        foreach (Building::SETUP as [$building, $position, $orientation]) {
+            self::placeBuilding($building, $position, $orientation, false);
+        }
     }
 
     protected function getAllDatas()
@@ -186,9 +184,12 @@ class HamletTheVillageBuildingGame extends Table
         return 0;
     }
 
-    function build(int $buildingId, int $x, int $y, int $z, int $orientation): void
+    function build(int $x, int $y, int $z, int $orientation): void
     {
+        self::checkAction('build');
+        $buildingId = (int)self::getGameStateValue(Globals::CURRENT_BUILDING);
         self::placeBuilding($buildingId, [$x, $y, $z], $orientation);
+        $this->gamestate->nextState('');
     }
 
     function moveDonkey(int $id, int $tile): void
@@ -196,8 +197,18 @@ class HamletTheVillageBuildingGame extends Table
 
     }
 
+    function argPlaceBuilding(): array
+    {
+        $building = (int)self::getGameStateValue(Globals::CURRENT_BUILDING);
+        return [
+            'building' => $building,
+            'spaces' => BUILDING_CELLS[$building]
+        ];
+    }
+
     function stNextTurn(): void
     {
+        self::incGameStateValue(Globals::CURRENT_BUILDING, 1);
         $this->gamestate->nextState('');
     }
 

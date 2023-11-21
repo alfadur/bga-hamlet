@@ -8,6 +8,15 @@
  * -----
  */
 
+const gameName = "hamletthevillagebuildinggame";
+
+const Edge = Object.freeze({
+    none: 0,
+    road: 1,
+    forest: 2,
+    mountain: 3
+});
+
 function createElement(parent, html) {
     const element = document.createElement("div");
     parent.appendChild(element);
@@ -29,13 +38,33 @@ function createSpace({x, y, z, edge_x, edge_y, edge_z, building_id: building}) {
     </div>`;
 }
 
+function createBuilding(building, spaces) {
+    return `<div class="hamlet-building" data-building="${building}">
+        ${spaces.map(createSpace).join("")}
+    </div>`;
+}
+
+function getBounds(spaces) {
+    return spaces.reduce((bounds, space) => ({
+        minX: Math.min(bounds.minX, parseInt(space.x) - parseInt(space.z)),
+        minY: Math.min(bounds.minY, parseInt(space.y)),
+        maxX: Math.max(bounds.maxX, parseInt(space.x) - parseInt(space.z)),
+        maxY: Math.max(bounds.maxY, parseInt(space.y)),
+    }), {
+        minX: Number.MAX_SAFE_INTEGER,
+        minY: Number.MAX_SAFE_INTEGER,
+        maxX: Number.MIN_SAFE_INTEGER,
+        maxY: Number.MIN_SAFE_INTEGER
+    });
+}
+
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter"
-], (dojo, declare) => declare("bgagame.hamletthevillagebuildinggame", ebg.core.gamegui, {
+], (dojo, declare) => declare(`bgagame.${gameName}`, ebg.core.gamegui, {
     constructor() {
-        console.log("hamletthevillagebuildinggame constructor");
+        console.log(`${gameName} constructor`);
     },
 
     setup(data) {
@@ -45,48 +74,63 @@ define([
             const player = data.players[player_id];
         }
 
-        const board =document.getElementById("hamlet-board");
+        this.board =document.getElementById("hamlet-board");
         for (const space of data.board) {
-            createElement(board, createSpace(space));
+            createElement(this.board, createSpace(space));
         }
 
-        const bounds = data.board.reduce(
-            (bounds, space) => ({
-                minX: Math.min(bounds.minX, parseInt(space.x) - parseInt(space.z)),
-                minY: Math.min(bounds.minY, parseInt(space.y)),
-                maxX: Math.max(bounds.maxX, parseInt(space.x) - parseInt(space.z)),
-                maxY: Math.max(bounds.maxY, parseInt(space.y)),
-            }), {
-                minX: Number.MAX_SAFE_INTEGER,
-                minY: Number.MAX_SAFE_INTEGER,
-                maxX: Number.MIN_SAFE_INTEGER,
-                maxY: Number.MIN_SAFE_INTEGER
-            }
-        )
+        const bounds = getBounds(data.board)
 
-        board.style.setProperty("--minCx", bounds.minX);
-        board.style.setProperty("--minCy", bounds.minY);
-        board.style.setProperty("--maxCx", bounds.maxX);
-        board.style.setProperty("--maxCy", bounds.maxY);
+        this.board.style.setProperty("--minCx", bounds.minX);
+        this.board.style.setProperty("--minCy", bounds.minY);
+        this.board.style.setProperty("--maxCx", bounds.maxX);
+        this.board.style.setProperty("--maxCy", bounds.maxY);
 
         this.setupNotifications();
 
         console.log("Ending game setup");
     },
 
-    onEnteringState(stateName, args) {
+    onEnteringState(stateName, state) {
         console.log(`Entering state: ${stateName}`);
 
-        switch (stateName) {
+        if (this.isCurrentPlayerActive()) {
+            switch (stateName) {
+                case 'placeBuilding': {
+                    console.log(state.args);
+                    const building = parseInt(state.args.building);
 
+                    const spaces = [];
+                    while (state.args.spaces.length >= 6) {
+                        const [x, y, z, edge_x, edge_y, edge_z] = state.args.spaces.splice(0, 6);
+                        const space = {
+                            x, y, z, edge_x, edge_y, edge_z, building_id: building};
+                        spaces.push(space);
+                    }
+
+                    this.spaces = spaces;
+
+                    this.currentSpace = {x: 0, y: 0, z: 0};
+                    this.currentOrientation = 0;
+                    this.currentBuilding = createElement(this.board,
+                        createBuilding(building, this.spaces));
+                    break;
+                }
+            }
         }
     },
 
     onLeavingState(stateName) {
         console.log(`Leaving state: ${stateName}`);
 
-        switch (stateName) {
-
+        if (this.isCurrentPlayerActive()) {
+            switch (stateName) {
+                case "placeBuilding": {
+                    this.currentBuilding.remove();
+                    delete this.currentBuilding;
+                    break;
+                }
+            }
         }
     },
 
@@ -95,8 +139,89 @@ define([
 
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
+                case "placeBuilding": {
+                    this.addActionButton('hamlet-build', _("Build"), () => {
+                        this.request("build", {
+                            orientation: this.currentOrientation,
+                            ...this.currentSpace
+                        });
+                    });
+
+                    const movement = [
+                        {id: "left", icon: "⬅", shift: [-1, 0, 1]},
+                        {id: "right", icon: "➡", shift: [1, 0, -1]},
+                        {id: "up-left", icon: "↖", shift: [0, -1, 1]},
+                        {id: "up-right", icon: "↗", shift: [1, -1, 0]},
+                        {id: "down-left", icon: "↙", shift: [-1, 1, 0]},
+                        {id: "down-right", icon: "↘", shift: [0, 1, -1]},
+                    ];
+
+                    for (const {id, icon, shift} of movement) {
+                        this.addActionButton(`hamlet-${id}`, icon, () => {
+                            this.moveBuilding(...shift);
+                        });
+                    }
+
+                    this.addActionButton("hamlet.rotate", "🔁", () => {
+                        this.rotateBuilding();
+                    });
+
+                    break;
+                }
             }
         }
+    },
+
+    rotateBuilding() {
+        const building = this.currentBuilding;
+        if (building) {
+            const sum = this.currentOrientation & 0b1;
+
+            const bounds = getBounds(this.spaces);
+            const tx = (bounds.minX + bounds.maxX) >> 1;
+            const y = (bounds.minY + bounds.maxY) >> 1;
+
+            const z = (sum - (tx + y)) >> 1
+            const x = tx + z;
+
+            this.currentSpace = {
+                x: this.currentSpace.x + x - z,
+                y: this.currentSpace.y + y - x,
+                z: this.currentSpace.z + z - y
+            };
+
+            this.currentOrientation = (this.currentOrientation + 1) % 6;
+            const cx = this.currentSpace.x - this.currentSpace.z;
+            const cy = this.currentSpace.y;
+            building.style.setProperty("--cx", cx.toString());
+            building.style.setProperty("--cy", cy.toString());
+            building.style.setProperty("--orientation", this.currentOrientation.toString());
+        }
+    },
+
+    moveBuilding(dx, dy, dz) {
+        console.log("Move building by", {dx, dy, dz});
+        const building = this.currentBuilding;
+        if (building) {
+            this.currentSpace.x += dx;
+            this.currentSpace.y += dy;
+            this.currentSpace.z += dz;
+            const x = this.currentSpace.x - this.currentSpace.z;
+            const y = this.currentSpace.y;
+            building.style.setProperty("--cx", x.toString());
+            building.style.setProperty("--cy", y.toString());
+        }
+    },
+
+    request(action, args, onSuccess) {
+        this.ajaxcall(`/${gameName}/${gameName}/${action}.html`, {
+            lock: true,
+            ...args
+        }, () => {
+            if (typeof onSuccess === "function") {
+                onSuccess();
+            }
+        });
     },
 
     setupNotifications() {

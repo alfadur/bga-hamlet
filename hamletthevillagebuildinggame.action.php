@@ -37,12 +37,11 @@ class action_hamletthevillagebuildinggame extends APP_GameAction
 
     public function build() {
         self::setAjaxMode();
-        $buildingId = self::getArg('x', AT_posint, true);
         $x = self::getArg('x', AT_int, true);
         $y = self::getArg('y', AT_int, true);
         $z = self::getArg('z', AT_int, true);
         $orientation = self::getArg('orientation', AT_posint, true);
-        $this->game->build($buildingId, $x, $y, $z, $orientation);
+        $this->game->build($x, $y, $z, $orientation);
         self::ajaxResponse();
     }
 

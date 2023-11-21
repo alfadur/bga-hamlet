@@ -16,6 +16,10 @@
 #hamlet-board {
     --space-width: 97px;
     --space-height: 84px;
+    --minCx: 0;
+    --minCy: 0;
+    --maxCx: 0;
+    --maxCy: 0;
 
     position: relative;
     width: 100%;
@@ -35,7 +39,7 @@
     height: var(--space-height);
     left: calc(var(--cx) * var(--space-width) / 2);
     top: calc(var(--cy) * var(--space-height));
-    background: red;
+    background-color: red;
     clip-path: polygon(0 100%, 100% 100%, 50% 0);
 
     display: flex;
@@ -101,6 +105,25 @@
 
 .hamlet-edge[data-edge="3"] {
     background-color: dimgrey;
+}
+
+.hamlet-building {
+    --cx: 0;
+    --cy: 0;
+    --orientation: 0;
+
+    position: absolute;
+    left: calc(var(--cx) * var(--space-width) / 2);
+    top: calc(var(--cy) * var(--space-height));
+    transform: rotate(calc(var(--orientation) * 60deg));
+    transition:
+        transform 250ms ease-out,
+        left 250ms ease-out,
+        top 250ms ease-out;
+}
+
+.hamlet-building .hamlet-board-space {
+    background-color: yellow;
 }
 
 .hamlet-building-church {

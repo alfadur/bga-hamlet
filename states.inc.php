@@ -64,7 +64,7 @@ $machinestates = [
         Fsm::NAME => 'nextTurn',
         Fsm::TYPE => FsmType::GAME,
         Fsm::ACTION => 'stNextTurn',
-        Fsm::TRANSITIONS => ['' => State::MOVE_DONKEY],
+        Fsm::TRANSITIONS => ['' => State::PLACE_BUILDING],
     ],
 
     State::MOVE_DONKEY => [
@@ -79,10 +79,11 @@ $machinestates = [
     State::PLACE_BUILDING => [
         Fsm::NAME => 'placeBuilding',
         Fsm::TYPE => FsmType::SINGLE_PLAYER,
-        Fsm::DESCRIPTION => clienttranslate('${actplayer} can place a building'),
-        Fsm::OWN_DESCRIPTION => clienttranslate('${you} can place a building'),
-        Fsm::POSSIBLE_ACTIONS => ['bulid'],
-        Fsm::TRANSITIONS => ['build' => State::NEXT_TURN]
+        Fsm::DESCRIPTION => clienttranslate('${actplayer} must place a building'),
+        Fsm::OWN_DESCRIPTION => clienttranslate('${you} must place a building'),
+        Fsm::POSSIBLE_ACTIONS => ['build'],
+        Fsm::ARGUMENTS => 'argPlaceBuilding',
+        Fsm::TRANSITIONS => ['' => State::NEXT_TURN]
     ],
 
     State::GAME_END => [
