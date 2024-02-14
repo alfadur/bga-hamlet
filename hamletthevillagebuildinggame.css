@@ -28,6 +28,8 @@
     translate:
         calc(50% - var(--space-width) * (var(--maxCx) + var(--minCx) + 1) / 4 )
         calc(50% - var(--space-height) * (var(--maxCy) + var(--minCy) + 1) / 2 );
+
+    filter: drop-shadow(0 2px 4px black);
 }
 
 .hamlet-board-space {
@@ -39,12 +41,17 @@
     height: var(--space-height);
     left: calc(var(--cx) * var(--space-width) / 2);
     top: calc(var(--cy) * var(--space-height));
-    background-color: red;
     clip-path: polygon(0 100%, 100% 100%, 50% 0);
 
     display: flex;
     justify-content: center;
     align-items: center;
+
+    pointer-events: none;
+}
+
+.hamlet-building .hamlet-board-space {
+    left: calc((var(--cx) + 2 * var(--space-offset)) * var(--space-width) / 2);
 }
 
 .hamlet-board-space[data-orientation="1"] {
@@ -116,17 +123,18 @@
     --sprite-y: 0;
     --x-spaces: 0;
     --y-spaces: 0;
+    --space-offset: 0;
     --clip: "";
 
     position: absolute;
-    left: calc(var(--cx) * var(--space-width) / 2);
-    top: calc((var(--cy) - var(--sign) * 0.288675) * var(--space-height));
+    left: calc((var(--cx) - 2 * var(--space-offset)) * var(--space-width) / 2);
+    top: calc((var(--cy) - var(--sign) * 0.34) * var(--space-height));
     width: calc(var(--space-width) * var(--x-spaces));
     height: calc(var(--space-height) * var(--y-spaces));
     transform: rotate(calc(var(--orientation) * 60deg));
     transform-origin:
-        calc(var(--space-width) / 2)
-        calc(var(--space-height) - var(--space-width) * 0.288675);
+        calc((2 * var(--space-offset) + 1) * var(--space-width) / 2)
+        calc(var(--space-height) - var(--space-width) * 0.29);
     transition:
         transform 250ms ease-out,
         left 250ms ease-out,
@@ -141,9 +149,8 @@
     clip-path: path(var(--clip));
 }
 
-.hamlet-building .hamlet-board-space {
-    background-color: yellow;
-    opacity: 0.4;
+.hamlet-building:hover {
+    filter: contrast(1.5);
 }
 
 .hamlet-building#hamlet-church {

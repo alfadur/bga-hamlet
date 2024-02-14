@@ -82,14 +82,15 @@ class HamletTheVillageBuildingGame extends Table
     {
         [$x, $y, $z] = $position;
 
-        self::DbQuery(<<<EOF
-            INSERT INTO building(building_id, x, y, z, orientation) 
-            VALUES ($buildingId, $x, $y, $z, $orientation)
-            EOF);
-
         if ($x + $y + $z !== ($orientation & 0b1)) {
             throw new BgaUserException('Invalid orientation');
         }
+
+        $query = <<<EOF
+            INSERT INTO building(building_id, x, y, z, orientation) 
+            VALUES ($buildingId, $x, $y, $z, $orientation)
+            EOF;
+        self::DbQuery($query);
 
         $sign = 1 - ($orientation & 0b1) * 2;
         $indices = [
@@ -224,7 +225,7 @@ class HamletTheVillageBuildingGame extends Table
     {
         $buildingId = (int)self::getGameStateValue(Globals::CURRENT_BUILDING);
         return [
-            'building' => $buildingId,
+            'buildingId' => $buildingId,
             'spaces' => self::getBuildingData($buildingId)
         ];
     }

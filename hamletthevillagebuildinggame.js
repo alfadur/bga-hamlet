@@ -10,6 +10,16 @@
 
 const gameName = "hamletthevillagebuildinggame";
 
+const Buildings = Object.freeze([
+    "church", "market", "shrine", "farm", "trade-post", "master-stonemason",
+    "warehouse", "woodcutter", "flour-mill", "small-woodland",
+    "large-woodland", "windmill", "tavern", "dairy-farm", "outpost-1",
+    "outpost-2", "stables", "cow-conservatory", "sawmill", "straight-barn",
+    "curved-barn", "quarry", "forest-pond", "mountain-pond", "farrier",
+    "small-mountain-range", "large-mountain-range", "square", "monument",
+    "stonemason", "lumber-mill", "town-hall"
+]);
+
 const Edge = Object.freeze({
     none: 0,
     road: 1,
@@ -39,7 +49,18 @@ function createSpace({x, y, z, edge_x, edge_y, edge_z, building_id: building}) {
 }
 
 function createBuilding(building, spaces) {
-    return `<div class="hamlet-building" data-building="${building}">
+    const id = `hamlet-${Buildings[parseInt(building.id)]}`;
+    const properties = {
+        cx: parseInt(building.x) - parseInt(building.z),
+        cy: parseInt(building.y),
+        orientation: parseInt(building.orientation),
+        sign: parseInt(building.orientation) & 0b1
+    }
+    const style = Object.keys(properties)
+        .map(name => `--${name}: ${properties[name]}`)
+        .join("; ");
+    return `<div id="${id}" style="${style}" class="hamlet-building" data-building="${building.id}"
+            data-x="${building.x}" data-y="${building.y}" data-z="${building.z}">
         ${spaces.map(createSpace).join("")}
     </div>`;
 }
@@ -48,51 +69,61 @@ const buildingShapes = Object.freeze({
     church: {
         xSpaces: 5,
         ySpaces: 4,
+        spaceOffset: 1.5,
         clip: [0, 0.5, 0.1, 0.25, 0.3, 0.25, 0.4, 0, 0.6, 0, 0.7, 0.25, 0.9, 0.25, 1, 0.5, 0.9, 0.75, 0.7, 0.75, 0.6, 1, 0.4, 1, 0.3, 0.75, 0.1, 0.75]
     },
     largeTriangle: {
         xSpaces: 3,
         ySpaces: 3,
+        spaceOffset: 1,
         clip: [0, 1, 0.5, 0, 1, 1]
     },
     smallTriangle: {
         xSpaces: 2,
         ySpaces: 2,
+        spaceOffset: 0.5,
         clip: [0, 1, 0.5, 0, 1, 1]
     },
     diamond: {
         xSpaces: 2,
         ySpaces: 4,
+        spaceOffset: 0.5,
         clip: [0, 0.5, 0.5, 0, 1, 0.5, 0.5, 1]
     },
     cutDiamond: {
         xSpaces: 2,
         ySpaces: 3,
+        spaceOffset: 0.5,
         clip: [0, 0.667, 0.5, 0, 1, 0.667, 0.75, 1, 0.25, 1]
     },
     flask: {
         xSpaces: 2,
         ySpaces: 3,
+        spaceOffset: 0.5,
         clip: [0, 0.667, 0.5, 0, 1, 0, 0.75, 0.333, 1, 0.667, 0.75, 1, 0.25, 1]
     },
     flag: {
         xSpaces: 2.5,
         ySpaces: 4,
+        spaceOffset: 1,
         clip: [0, 0.75, 0.6, 0, 1, 0.5, 0.6, 0.5, 0.8, 0.75, 0.6, 1, 0.2, 1]
     },
     hex: {
         xSpaces: 2,
         ySpaces: 2,
+        spaceOffset: 0,
         clip: [0, 0.5, 0.25, 0, 0.75, 0, 1, 0.50, 0.75, 1, 0.25, 1]
     },
     hexHalf: {
         xSpaces: 2,
         ySpaces: 3,
+        spaceOffset: 0,
         clip: [0, 0.333, 0.25, 0, 0.75, 0, 1, 0.333, 0.75, 0.667, 1, 1, 0, 1, 0.25, 0.667]
     },
     doubleHex: {
         xSpaces: 2,
         ySpaces: 4,
+        spaceOffset: 0,
         clip: [0, 0.25, 0.25, 0, 0.75, 0, 1, 0.25, 0.75, 0.5, 1, 0.75, 0.75, 1, 0.25, 1, 0, 0.75, 0.25, 0.50]
     }
 });
@@ -102,6 +133,7 @@ function clipBuilding(building) {
     const shape = buildingShapes[style.getPropertyValue("--shape")];
     building.style.setProperty("--x-spaces", shape.xSpaces.toString());
     building.style.setProperty("--y-spaces", shape.ySpaces.toString());
+    building.style.setProperty("--space-offset", shape.spaceOffset.toString());
     const width = shape.xSpaces * parseInt(style.getPropertyValue("--space-width"));
     const height = shape.ySpaces * parseInt(style.getPropertyValue("--space-height"));
     const clip = shape.clip;
@@ -144,6 +176,14 @@ define([
         }
 
         this.board = document.getElementById("hamlet-board");
+
+        for (const building of data.buildings) {
+            const element= createElement(this.board,
+                createBuilding(building, []));
+
+            clipBuilding(element);
+        }
+
         for (const space of data.board) {
             createElement(this.board, createSpace(space));
         }
@@ -167,13 +207,20 @@ define([
             switch (stateName) {
                 case 'placeBuilding': {
                     console.log(state.args);
-                    const building = parseInt(state.args.building);
+
+                    const building = {
+                        id: state.args.buildingId,
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                        orientation: 0
+                    };
 
                     const spaces = [];
                     while (state.args.spaces.length >= 6) {
                         const [x, y, z, edge_x, edge_y, edge_z] = state.args.spaces.splice(0, 6);
                         const space = {
-                            x, y, z, edge_x, edge_y, edge_z, building_id: building};
+                            x, y, z, edge_x, edge_y, edge_z, building_id: building.id};
                         spaces.push(space);
                     }
 
@@ -183,6 +230,7 @@ define([
                     this.currentOrientation = 0;
                     this.currentBuilding = createElement(this.board,
                         createBuilding(building, this.spaces));
+                    clipBuilding(this.currentBuilding);
                     break;
                 }
             }
@@ -210,10 +258,10 @@ define([
             switch (stateName) {
                 case "placeBuilding": {
                     this.addActionButton('hamlet-build', _("Build"), () => {
-                        this.request("build", {
-                            orientation: this.currentOrientation,
-                            ...this.currentSpace
-                        });
+                        const orientation = this.currentOrientation >= 0 ?
+                            this.currentOrientation % 6 :
+                            (this.currentOrientation % 6 + 6) % 6;
+                        this.request("build", {orientation, ...this.currentSpace});
                     });
 
                     const movement = [
@@ -265,8 +313,7 @@ define([
             };*/
 
             this.currentSpace.x += shift;
-            this.currentOrientation =
-                (this.currentOrientation + steps + 6) % 6;
+            this.currentOrientation = this.currentOrientation + steps;
             const cx = this.currentSpace.x - this.currentSpace.z;
             const cy = this.currentSpace.y;
 
