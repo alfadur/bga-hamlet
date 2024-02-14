@@ -53,7 +53,7 @@ class HamletTheVillageBuildingGame extends Table
         
         /************ Start the game initialization *****/
 
-        self::setGameStateInitialValue(Globals::CURRENT_BUILDING, Building::TOWN_HALL);
+        self::setGameStateInitialValue(Globals::CURRENT_BUILDING, Building::TRADE_POST);
 
         self::createBuildings();
 
@@ -80,9 +80,12 @@ class HamletTheVillageBuildingGame extends Table
 
     static function placeBuilding(int $buildingId, array $position, int $orientation, bool $positionCheck = true): array
     {
-        self::DbQuery("INSERT INTO building(building_id) VALUES ($buildingId)");
-
         [$x, $y, $z] = $position;
+
+        self::DbQuery(<<<EOF
+            INSERT INTO building(building_id, x, y, z, orientation) 
+            VALUES ($buildingId, $x, $y, $z, $orientation)
+            EOF);
 
         if ($x + $y + $z !== ($orientation & 0b1)) {
             throw new BgaUserException('Invalid orientation');
@@ -192,6 +195,8 @@ class HamletTheVillageBuildingGame extends Table
 
         $query = 'SELECT player_id AS id, player_score AS score FROM player ';
         $result['players'] = self::getCollectionFromDb($query);
+        $result['buildings'] = self::getObjectListFromDb(
+            'SELECT building_id AS id, x, y, z, orientation FROM building');
         $result['board'] = self::getObjectListFromDb('SELECT * FROM board');
 
         return $result;
