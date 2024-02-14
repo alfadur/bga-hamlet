@@ -44,6 +44,75 @@ function createBuilding(building, spaces) {
     </div>`;
 }
 
+const buildingShapes = Object.freeze({
+    church: {
+        xSpaces: 5,
+        ySpaces: 4,
+        clip: [0, 0.5, 0.1, 0.25, 0.3, 0.25, 0.4, 0, 0.6, 0, 0.7, 0.25, 0.9, 0.25, 1, 0.5, 0.9, 0.75, 0.7, 0.75, 0.6, 1, 0.4, 1, 0.3, 0.75, 0.1, 0.75]
+    },
+    largeTriangle: {
+        xSpaces: 3,
+        ySpaces: 3,
+        clip: [0, 1, 0.5, 0, 1, 1]
+    },
+    smallTriangle: {
+        xSpaces: 2,
+        ySpaces: 2,
+        clip: [0, 1, 0.5, 0, 1, 1]
+    },
+    diamond: {
+        xSpaces: 2,
+        ySpaces: 4,
+        clip: [0, 0.5, 0.5, 0, 1, 0.5, 0.5, 1]
+    },
+    cutDiamond: {
+        xSpaces: 2,
+        ySpaces: 3,
+        clip: [0, 0.667, 0.5, 0, 1, 0.667, 0.75, 1, 0.25, 1]
+    },
+    flask: {
+        xSpaces: 2,
+        ySpaces: 3,
+        clip: [0, 0.667, 0.5, 0, 1, 0, 0.75, 0.333, 1, 0.667, 0.75, 1, 0.25, 1]
+    },
+    flag: {
+        xSpaces: 2.5,
+        ySpaces: 4,
+        clip: [0, 0.75, 0.6, 0, 1, 0.5, 0.6, 0.5, 0.8, 0.75, 0.6, 1, 0.2, 1]
+    },
+    hex: {
+        xSpaces: 2,
+        ySpaces: 2,
+        clip: [0, 0.5, 0.25, 0, 0.75, 0, 1, 0.50, 0.75, 1, 0.25, 1]
+    },
+    hexHalf: {
+        xSpaces: 2,
+        ySpaces: 3,
+        clip: [0, 0.333, 0.25, 0, 0.75, 0, 1, 0.333, 0.75, 0.667, 1, 1, 0, 1, 0.25, 0.667]
+    },
+    doubleHex: {
+        xSpaces: 2,
+        ySpaces: 4,
+        clip: [0, 0.25, 0.25, 0, 0.75, 0, 1, 0.25, 0.75, 0.5, 1, 0.75, 0.75, 1, 0.25, 1, 0, 0.75, 0.25, 0.50]
+    }
+});
+
+function clipBuilding(building) {
+    const style = getComputedStyle(building);
+    const shape = buildingShapes[style.getPropertyValue("--shape")];
+    building.style.setProperty("--x-spaces", shape.xSpaces.toString());
+    building.style.setProperty("--y-spaces", shape.ySpaces.toString());
+    const width = shape.xSpaces * parseInt(style.getPropertyValue("--space-width"));
+    const height = shape.ySpaces * parseInt(style.getPropertyValue("--space-height"));
+    const clip = shape.clip;
+
+    const steps = [];
+    for (let i = 0; i < clip.length; i += 2) {
+        steps.push(`${clip[i] * width},${clip[i + 1] * height}`);
+    }
+    building.style.setProperty("--clip", `"M${steps.join(" ")}Z"`);
+}
+
 function getBounds(spaces) {
     return spaces.reduce((bounds, space) => ({
         minX: Math.min(bounds.minX, parseInt(space.x) - parseInt(space.z)),
@@ -74,7 +143,7 @@ define([
             const player = data.players[player_id];
         }
 
-        this.board =document.getElementById("hamlet-board");
+        this.board = document.getElementById("hamlet-board");
         for (const space of data.board) {
             createElement(this.board, createSpace(space));
         }

@@ -112,10 +112,17 @@
     --cy: 0;
     --orientation: 0;
     --sign: 0;
+    --sprite-x: 0;
+    --sprite-y: 0;
+    --x-spaces: 0;
+    --y-spaces: 0;
+    --clip: "";
 
     position: absolute;
     left: calc(var(--cx) * var(--space-width) / 2);
     top: calc((var(--cy) - var(--sign) * 0.288675) * var(--space-height));
+    width: calc(var(--space-width) * var(--x-spaces));
+    height: calc(var(--space-height) * var(--y-spaces));
     transform: rotate(calc(var(--orientation) * 60deg));
     transform-origin:
         calc(var(--space-width) / 2)
@@ -124,13 +131,216 @@
         transform 250ms ease-out,
         left 250ms ease-out,
         top 250ms ease-out;
+    background-image: url("img/buildings.webp");
+    background-size:
+        calc(var(--space-width) * 16)
+        calc(var(--space-height) * 13);
+    background-position:
+        calc(var(--sprite-x) * var(--space-width) * -1)
+        calc(var(--sprite-y) * var(--space-height) * -1);
+    clip-path: path(var(--clip));
 }
 
 .hamlet-building .hamlet-board-space {
     background-color: yellow;
+    opacity: 0.4;
 }
 
-.hamlet-building-church {
-    width: calc(var(--space-width) * 4);
-    height: calc(var(--space-height) * 4);
+.hamlet-building#hamlet-church {
+    --shape: church;
+    --sprite-x: 0.5;
+    --sprite-y: 1;
+}
+
+.hamlet-low-player .hamlet-building#hamlet-church {
+    --shape: church;
+    --sprite-x: 5;
+    --sprite-y: 0;
+}
+
+.hamlet-building#hamlet-market {
+    --shape: largeTriangle;
+    --sprite-x: 2.5;
+    --sprite-y: 8;
+}
+
+.hamlet-low-player .hamlet-building#hamlet-market {
+    --shape: largeTriangle;
+    --sprite-x: 5.5;
+    --sprite-y: 8;
+}
+
+.hamlet-building#hamlet-shrine {
+    --shape: smallTriangle;
+    --sprite-x: 3.5;
+    --sprite-y: 11;
+}
+
+.hamlet-building#hamlet-farm {
+    --shape: smallTriangle;
+    --sprite-x: 5.5;
+    --sprite-y: 11;
+}
+
+.hamlet-building#hamlet-trade-post {
+    --shape: smallTriangle;
+    --sprite-x: 7.5;
+    --sprite-y: 11;
+}
+
+.hamlet-building#hamlet-master-stonemason {
+    --shape: diamond;
+    --sprite-x: 14;
+    --sprite-y: 2;
+}
+
+.hamlet-building#hamlet-warehouse {
+    --shape: diamond;
+    --sprite-x: 7;
+    --sprite-y: 6;
+}
+
+.hamlet-building#hamlet-woodcutter {
+    --shape: diamond;
+    --sprite-x: 8.5;
+    --sprite-y: 5;
+}
+
+.hamlet-building#hamlet-flour-mill {
+    --shape: diamond;
+    --sprite-x: 12;
+    --sprite-y: 8;
+}
+
+.hamlet-building#hamlet-small-woodland {
+    --shape: cutDiamond;
+    --sprite-x: 4.5;
+    --sprite-y: 7;
+}
+
+.hamlet-building#hamlet-large-woodland {
+    --shape: cutDiamond;
+    --sprite-x: 9.5;
+    --sprite-y: 3;
+}
+
+.hamlet-building#hamlet-windmill {
+    --shape: cutDiamond;
+    --sprite-x: 10.5;
+    --sprite-y: 9;
+}
+
+.hamlet-building#hamlet-tavern {
+    --shape: flask;
+    --sprite-x: 3.5;
+    --sprite-y: 5;
+}
+
+.hamlet-building#hamlet-dairy-farm {
+    --shape: flask;
+    --sprite-x: 11;
+}
+
+.hamlet-building#hamlet-outpost-1 {
+    --shape: flask;
+    --sprite-x: 10;
+    --sprite-y: 6;
+}
+
+.hamlet-building#hamlet-outpost-2 {
+    --shape: flask;
+    --sprite-x: 10;
+    --sprite-y: 6;
+}
+
+.hamlet-building#hamlet-stables {
+    --shape: flag;
+    --sprite-x: 0.5;
+    --sprite-y: 8;
+}
+
+.hamlet-building#hamlet-cow-conservatory {
+    --shape: flag;
+    --sprite-x: 11.5;
+    --sprite-y: 4;
+}
+
+.hamlet-building#hamlet-sawmill {
+    --shape: flag;
+    --sprite-x: 8.5;
+    --sprite-y: 8;
+}
+
+.hamlet-building#hamlet-straight-barn {
+    --shape: hex;
+    --sprite-x: 0.5;
+}
+
+.hamlet-building#hamlet-curved-barn {
+    --shape: hex;
+    --sprite-x: 2;
+    --sprite-y: 11;
+}
+
+.hamlet-building#hamlet-quarry {
+    --shape: hex;
+    --sprite-x: 3.5;
+}
+
+.hamlet-building#hamlet-forest-pond {
+    --shape: hex;
+    --sprite-x: 12.5;
+}
+
+.hamlet-building#hamlet-mountain-pond {
+    --shape: hex;
+    --sprite-x: 12.5;
+    --sprite-y: 2;
+}
+
+.hamlet-building#hamlet-farrier {
+    --shape: hex;
+    --sprite-x: 8;
+    --sprite-y: 3;
+}
+
+.hamlet-building#hamlet-small-mountain-range {
+    --shape: hex;
+    --sprite-x: 11;
+    --sprite-y: 3;
+}
+
+.hamlet-building#hamlet-large-mountain-range {
+    --shape: hex;
+    --sprite-x: 6.5;
+    --sprite-y: 4;
+}
+
+.hamlet-building#hamlet-square {
+    --shape: hexHalf;
+    --sprite-x: 9.5;
+}
+
+.hamlet-building#hamlet-monument {
+    --shape: hexHalf;
+    --sprite-x: 14;
+    --sprite-y: 9;
+}
+
+.hamlet-building#hamlet-stonemason {
+    --shape: doubleHex;
+    --sprite-x: 2;
+    --sprite-y: 5;
+}
+
+.hamlet-building#hamlet-lumber-mill {
+    --shape: doubleHex;
+    --sprite-x: 0.5;
+    --sprite-y: 4;
+}
+
+.hamlet-building#hamlet-town-hall {
+    --shape: doubleHex;
+    --sprite-x: 5;
+    --sprite-y: 3;
 }

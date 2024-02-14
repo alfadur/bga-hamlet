@@ -60,6 +60,24 @@ class HamletTheVillageBuildingGame extends Table
         $this->activeNextPlayer();
     }
 
+    static function getBuildingData(int $buildingId): array {
+        [$shapeId, $palette] = BUILDING_PALETTES[$buildingId];
+
+        $buildingData = SHAPES[$shapeId];
+        $size = count($buildingData) / 6;
+
+        $paletteIndex = 0;
+        for ($i = 0; $i < $size; ++$i) {
+            for ($j = 0; $j < 3; ++$j) {
+                $index = $i * 6 + 3 + $j;
+                $buildingData[$index] = $buildingData[$index] ?
+                    $palette[$paletteIndex++] : Edge::NONE;
+            }
+        }
+
+        return $buildingData;
+    }
+
     static function placeBuilding(int $buildingId, array $position, int $orientation, bool $positionCheck = true): array
     {
         self::DbQuery("INSERT INTO building(building_id) VALUES ($buildingId)");
@@ -77,7 +95,7 @@ class HamletTheVillageBuildingGame extends Table
             ($orientation + 2) % 3
         ];
 
-        $buildingData = BUILDING_CELLS[$buildingId];
+        $buildingData = self::getBuildingData($buildingId);
         $size = count($buildingData) / 6;
 
         $values = [];
@@ -199,10 +217,10 @@ class HamletTheVillageBuildingGame extends Table
 
     function argPlaceBuilding(): array
     {
-        $building = (int)self::getGameStateValue(Globals::CURRENT_BUILDING);
+        $buildingId = (int)self::getGameStateValue(Globals::CURRENT_BUILDING);
         return [
-            'building' => $building,
-            'spaces' => BUILDING_CELLS[$building]
+            'building' => $buildingId,
+            'spaces' => self::getBuildingData($buildingId)
         ];
     }
 
