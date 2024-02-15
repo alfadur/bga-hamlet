@@ -357,6 +357,30 @@
     --sprite-y: 3;
 }
 
+.hamlet-product {
+    --product-size: 20px;
+
+    position: relative;
+    width: var(--product-size);
+    height: var(--product-size);
+    background-color: white;
+    border-radius: 5px;
+    outline: 2px solid black;
+    transform-origin: center;
+    transform: rotate(calc(-60deg * var(--orientation)));
+}
+
+.hamlet-product::after {
+    display: block;
+    position: absolute;
+    content: attr(data-type);
+    width: 100%;
+    height: 100%;
+    color: black;
+    line-height: var(--product-size);
+    text-align: center;
+}
+
 .hamlet-donkey {
     --donkey-size: 40px;
 

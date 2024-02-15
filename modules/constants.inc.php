@@ -91,6 +91,46 @@ interface Building
     ];
 }
 
+interface Resource {
+    const WOOD = 1;
+    const STONE = 1 << 1;
+    const WHEAT = 1 << 2;
+    const LUMBER = 1 << 3;
+    const BRICK  = 1 << 4;
+    const MILK = 1 << 5;
+    const FLOUR = 1 << 6;
+
+    const BASIC = self::WHEAT | self::STONE | self::WHEAT;
+    const REFINED = ~self::BASIC;
+
+    const INGREDIENTS = [
+        self::LUMBER => self::WOOD,
+        self::BRICK => self::STONE,
+        self::FLOUR => self::WHEAT,
+        self::MILK => self::WHEAT
+    ];
+}
+
+const BUILDING_PRODUCTS = [
+    Building::QUARRY => [3, Resource::STONE],
+    Building::WOODCUTTER => [3, Resource::WOOD],
+    Building::FARM => [3, Resource::WHEAT],
+    Building::STRAIGHT_BARN => [3, Resource::BASIC],
+    Building::CURVED_BARN => [3, Resource::BASIC],
+
+    Building::SAWMILL => [1, Resource::LUMBER],
+    Building::LUMBER_MILL => [2, Resource::LUMBER],
+
+    Building::STONEMASON => [1, Resource::BRICK],
+    Building::MASTER_STONEMASON => [2, Resource::BRICK],
+
+    Building::FLOUR_MILL => [1, Resource::FLOUR],
+    Building::WINDMILL => [2, Resource::FLOUR],
+
+    Building::DAIRY_FARM => [1, Resource::MILK],
+    Building::COW_CONSERVATORY => [2, Resource::MILK],
+];
+
 interface Edge {
     const NONE = 0;
     const ROAD = 1;

@@ -51,6 +51,14 @@ class action_hamletthevillagebuildinggame extends APP_GameAction
         self::ajaxResponse();
     }
 
+    public function work()
+    {
+       self::setAjaxMode();
+       $buildingId = self::getArg('buildingId', AT_posint, true);
+       $count = self::getArg('count', AT_posint, true);
+       $this->game->work($buildingId, $count);
+       self::ajaxResponse();
+    }
 
     public function build() {
         self::setAjaxMode();

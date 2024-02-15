@@ -186,6 +186,10 @@ class HamletTheVillageBuildingGame extends Table
 
         if (!$setup) {
             self::DbQuery("INSERT INTO adjacency(building1_id, building2_id, road) VALUES $args");
+            if (array_key_exists($buildingId, BUILDING_PRODUCTS)) {
+                [, $type] = BUILDING_PRODUCTS[$buildingId];
+                self::DbQuery("INSERT INTO product(building_id, product_type) VALUES ($buildingId, $type)");
+            }
         }
 
         return $coords;
@@ -195,14 +199,25 @@ class HamletTheVillageBuildingGame extends Table
     {
         $church = Building::CHURCH;
         $connections = [];
+        $products = [];
+
         foreach (Building::SETUP as [$building, $position, $orientation]) {
             self::placeBuilding($building, $position, $orientation, true);
+
             if ($building !== Building::CHURCH) {
                 $connections[] = "($building,$church,2)";
+            }
+
+            if (array_key_exists($building, BUILDING_PRODUCTS)) {
+                [, $type] = BUILDING_PRODUCTS[$building];
+                $products[] = "($building,$type,2)";
             }
         }
         $args = implode(",", $connections);
         self::DbQuery("INSERT INTO adjacency(building1_id, building2_id, road) VALUES $args");
+
+        $args = implode(",", $products);
+        self::DbQuery("INSERT INTO product(building_id, product_type, count) VALUES $args");
     }
 
     static function setupPlayers(array $players): void
@@ -222,10 +237,15 @@ class HamletTheVillageBuildingGame extends Table
 
         $result['round'] = self::getGameStateValue(Globals::ROUND_NUMBER);
         $result['movedDonkeys'] = self::getGameStateValue(Globals::MOVED_DONKEYS);
-        $result['players'] = self::getCollectionFromDb(
-            'SELECT player_id AS id, player_score AS score, player_color AS color, player_no AS no FROM player ');
+        $result['players'] = self::getCollectionFromDb(<<<'EOF'
+            SELECT player_id AS id, player_score AS score, 
+                player_color AS color, player_no AS no, coins 
+            FROM player 
+            EOF);
         $result['buildings'] = self::getObjectListFromDb(
             'SELECT building_id AS id, x, y, z, orientation FROM building');
+        $result['products'] = self::getObjectListFromDb(
+                'SELECT building_id AS buildingId, product_type AS type, count FROM product WHERE `count` > 0');
         $result['adjacency'] = self::getObjectListFromDb(
             'SELECT building1_id AS `from`, building2_id AS `to`, road FROM adjacency');
         $result['donkeys'] = self::getObjectListFromDb(
@@ -278,7 +298,7 @@ class HamletTheVillageBuildingGame extends Table
         }
 
         self::notifyAllPlayers('move', clienttranslate('${player_name} moves ${donkeyIcon} to ${buildingIcon}'), [
-            'player_name' => self::getActivePlayerId(),
+            'player_name' => self::getActivePlayerName(),
             'donkeyId' => $donkeyId,
             'buildingId' => $buildingId,
             'donkeyIcon' => $donkeyId,
@@ -296,6 +316,37 @@ class HamletTheVillageBuildingGame extends Table
     {
         self::checkAction('skip');
         $this->gamestate->nextState('end');
+    }
+
+    function work(int $buildingId, int $count, ?array $ingredients = null): void
+    {
+        if ($count <= 0 || !array_key_exists($buildingId, BUILDING_PRODUCTS)) {
+            throw new BgaUserException("Invalid building");
+        }
+
+        [$maxNumber, $type] = BUILDING_PRODUCTS[$buildingId];
+        self::DbQuery(<<<EOF
+            UPDATE product 
+            SET `count` = $maxNumber
+            WHERE building_id = $buildingId AND product_type = $type AND `count` + $count = $maxNumber
+            EOF);
+
+        if (self::DbAffectedRow() === 0) {
+            throw new BgaUserException("Invalid work");
+        }
+
+        self::notifyAllPlayers('work', clienttranslate('${building}: ${player_name} earns ${coinIcons} for producing ${productIcons}'), [
+            'building' => $buildingId,
+            'player_name' => self::getActivePlayerName(),
+            'coinIcons' => 2,
+            'product' => [
+                'type' => $type,
+                'count' => $count
+            ],
+            'productIcons' => "$count,$type"
+        ]);
+
+        $this->gamestate->nextState('');
     }
 
     function argMoveDonkey(): array

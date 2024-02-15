@@ -71,6 +71,10 @@ function createBuilding(building, spaces) {
     </div>`;
 }
 
+function createProduct(type) {
+    return `<div class="hamlet-product" data-type="${type}"</div>`;
+}
+
 function createDonkey(donkey, color) {
     return `<div id="hamlet-donkey-${donkey.id}"
             style="background-color: #${color}" class="hamlet-donkey" 
@@ -201,6 +205,14 @@ define([
                 event.stopPropagation();
                 this.onBuildingClick(element);
             })
+        }
+
+        for (const product of data.products) {
+            const building = document.querySelector(
+                `.hamlet-building[data-building="${product.buildingId}"]`);
+            for (let i = 0; i < product.count; ++i) {
+                createElement(building, createProduct(product.type));
+            }
         }
 
         for (const donkey of data.donkeys) {
@@ -433,6 +445,11 @@ define([
                     });
                 }
             }
+        } else if (this.checkAction("work", true)) {
+            this.request("work", {
+                buildingId: building.dataset.building,
+                count: 3 - building.querySelectorAll(".hamlet-product").length
+            });
         }
     },
 
@@ -447,5 +464,14 @@ define([
             building.appendChild(donkey);
             donkey.classList.add("hamlet-moved");
         });
+
+        dojo.subscribe("work", this, ({args}) => {
+            console.log(args);
+            const building = document.querySelector(
+                `.hamlet-building[data-building="${args.building}"]`);
+            for (let i = 0; i < parseInt(args.product.count); ++i) {
+                createElement(building, createProduct(args.product.type));
+            }
+        })
     }
 }));

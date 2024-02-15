@@ -75,10 +75,9 @@ $machinestates = [
         Fsm::TYPE => FsmType::SINGLE_PLAYER,
         Fsm::DESCRIPTION => clienttranslate('${actplayer} must place a villager'),
         Fsm::OWN_DESCRIPTION => clienttranslate('${you} must place a villager'),
+        Fsm::POSSIBLE_ACTIONS => ['work'],
         Fsm::TRANSITIONS => [
-            'build' => State::PLACE_BUILDING,
-            'road' => State::PLACE_ROAD,
-            'sell' => State::SELL_GOODS
+            '' => State::VILLAGER_ACTION,
         ]
     ],
 

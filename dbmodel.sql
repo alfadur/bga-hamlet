@@ -7,6 +7,8 @@
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
 -- -----
 
+ALTER TABLE `player` ADD `coins` TINYINT UNSIGNED NOT NULL DEFAULT 2;
+
 CREATE TABLE IF NOT EXISTS `building`(
     `building_id` TINYINT UNSIGNED NOT NULL,
     `x` TINYINT NOT NULL,
@@ -22,6 +24,16 @@ CREATE TABLE IF NOT EXISTS `adjacency`(
     `road` TINYINT NOT NULL,
     `owner_id` INTEGER UNSIGNED NULL,
     PRIMARY KEY(`building1_id`, `building2_id`),
+    FOREIGN KEY(`owner_id`) REFERENCES `player`(`player_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `product`(
+    `building_id` TINYINT UNSIGNED NOT NULL,
+    `owner_id` INTEGER UNSIGNED NULL,
+    `product_type` TINYINT UNSIGNED NOT NULL,
+    `count` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY(`building_id`, `product_type`),
+    FOREIGN KEY(`building_id`) REFERENCES `building`(`building_id`),
     FOREIGN KEY(`owner_id`) REFERENCES `player`(`player_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
@@ -45,3 +57,4 @@ CREATE TABLE IF NOT EXISTS `donkey`(
     FOREIGN KEY(`player_id`) REFERENCES `player`(`player_id`),
     FOREIGN KEY(`building_id`) REFERENCES `building`(`building_id`)
 ) ENGINE = InnoDB DEFAULT CHAR SET = utf8 AUTO_INCREMENT = 1;
+
