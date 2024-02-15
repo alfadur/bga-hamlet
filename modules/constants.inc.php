@@ -22,21 +22,29 @@ interface FsmType {
 interface State {
     const GAME_START = 1;
 
-    const NEXT_TURN = 2;
-    const MOVE_DONKEY = 3;
+    const MOVE_DONKEY = 2;
+    const VILLAGER_ACTION = 3;
     const PLACE_BUILDING = 4;
-    const VILLAGER_ACTION = 5;
+    const PLACE_ROAD = 5;
+    const SELL_GOODS = 6;
+    const NEXT_TURN = 7;
+    const NEXT_ROUND = 8;
 
     const GAME_END = 99;
 }
 
 interface Globals
 {
+    const ROUND_NUMBER = 'roundNumber';
+    const ROUND_NUMBER_ID = 10;
     const MOVED_DONKEYS = 'movedDonkeys';
-    const MOVED_DONKEYS_ID = 10;
+    const MOVED_DONKEYS_ID = 11;
     const CURRENT_BUILDING = 'currentBuilding';
-    const CURRENT_BUILDING_ID = 11;
+    const CURRENT_BUILDING_ID = 12;
 }
+
+const MAX_DONKEYS = 6;
+const DONKEY_BITS = 5; //npow2(MAX_DONKEYS * 4)
 
 interface Building
 {

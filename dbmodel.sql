@@ -14,7 +14,16 @@ CREATE TABLE IF NOT EXISTS `building`(
     `z` TINYINT NOT NULL,
     `orientation` TINYINT UNSIGNED NOT NULL,
     PRIMARY KEY(`building_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `adjacency`(
+    `building1_id` TINYINT NOT NULL,
+    `building2_id` TINYINT NOT NULL,
+    `road` TINYINT NOT NULL,
+    `owner_id` INTEGER UNSIGNED NULL,
+    PRIMARY KEY(`building1_id`, `building2_id`),
+    FOREIGN KEY(`owner_id`) REFERENCES `player`(`player_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CREATE TABLE IF NOT EXISTS `board`(
     `x` TINYINT NOT NULL,
@@ -26,4 +35,13 @@ CREATE TABLE IF NOT EXISTS `board`(
     `building_id` TINYINT UNSIGNED NOT NULL,
     PRIMARY KEY(`x`, `y`, `z`),
     FOREIGN KEY(`building_id`) REFERENCES `building`(`building_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS `donkey`(
+    `donkey_id` TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `building_id` TINYINT UNSIGNED NOT NULL,
+    `player_id` INTEGER UNSIGNED NOT NULL,
+    PRIMARY KEY(`donkey_id`),
+    FOREIGN KEY(`player_id`) REFERENCES `player`(`player_id`),
+    FOREIGN KEY(`building_id`) REFERENCES `building`(`building_id`)
+) ENGINE = InnoDB DEFAULT CHAR SET = utf8 AUTO_INCREMENT = 1;

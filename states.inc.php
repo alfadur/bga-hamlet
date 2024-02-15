@@ -57,23 +57,29 @@ $machinestates = [
         Fsm::TYPE => FsmType::MANAGER,
         Fsm::DESCRIPTION => "",
         Fsm::ACTION => 'stGameSetup',
-        Fsm::TRANSITIONS => ['' => State::NEXT_TURN]
-    ],
-
-    State::NEXT_TURN => [
-        Fsm::NAME => 'nextTurn',
-        Fsm::TYPE => FsmType::GAME,
-        Fsm::ACTION => 'stNextTurn',
-        Fsm::TRANSITIONS => ['' => State::PLACE_BUILDING],
+        Fsm::TRANSITIONS => ['' => State::MOVE_DONKEY]
     ],
 
     State::MOVE_DONKEY => [
         Fsm::NAME => 'moveDonkey',
         Fsm::TYPE => FsmType::SINGLE_PLAYER,
-        Fsm::DESCRIPTION => clienttranslate('${actplayer} can move donkeys'),
-        Fsm::OWN_DESCRIPTION => clienttranslate('${you} can move donkeys'),
+        Fsm::DESCRIPTION => clienttranslate('${actplayer} must move donkeys'),
+        Fsm::OWN_DESCRIPTION => clienttranslate('${you} must move donkeys'),
+        Fsm::ARGUMENTS => 'argMoveDonkey',
         Fsm::POSSIBLE_ACTIONS => ['move', 'skip'],
-        Fsm::TRANSITIONS => ['move' => State::MOVE_DONKEY, 'action' => State::VILLAGER_ACTION]
+        Fsm::TRANSITIONS => ['move' => State::MOVE_DONKEY, 'end' => State::VILLAGER_ACTION]
+    ],
+
+    State::VILLAGER_ACTION => [
+        Fsm::NAME => 'villagerAction',
+        Fsm::TYPE => FsmType::SINGLE_PLAYER,
+        Fsm::DESCRIPTION => clienttranslate('${actplayer} must place a villager'),
+        Fsm::OWN_DESCRIPTION => clienttranslate('${you} must place a villager'),
+        Fsm::TRANSITIONS => [
+            'build' => State::PLACE_BUILDING,
+            'road' => State::PLACE_ROAD,
+            'sell' => State::SELL_GOODS
+        ]
     ],
 
     State::PLACE_BUILDING => [
@@ -84,6 +90,20 @@ $machinestates = [
         Fsm::POSSIBLE_ACTIONS => ['build'],
         Fsm::ARGUMENTS => 'argPlaceBuilding',
         Fsm::TRANSITIONS => ['' => State::NEXT_TURN]
+    ],
+
+    State::NEXT_TURN => [
+        Fsm::NAME => 'nextTurn',
+        Fsm::TYPE => FsmType::GAME,
+        Fsm::ACTION => 'stNextTurn',
+        Fsm::TRANSITIONS => ['next' => State::MOVE_DONKEY, 'end' => State::NEXT_ROUND],
+    ],
+
+    State::NEXT_ROUND => [
+        Fsm::NAME => 'nextRound',
+        Fsm::TYPE => FsmType::GAME,
+        Fsm::ACTION => 'stNextRound',
+        Fsm::TRANSITIONS => ['next' => State::MOVE_DONKEY, 'end' => State::NEXT_ROUND],
     ],
 
     State::GAME_END => [

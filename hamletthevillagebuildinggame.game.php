@@ -19,6 +19,7 @@ class HamletTheVillageBuildingGame extends Table
         parent::__construct();
         
         self::initGameStateLabels( [
+            Globals::ROUND_NUMBER => Globals::ROUND_NUMBER_ID,
             Globals::MOVED_DONKEYS => Globals::MOVED_DONKEYS_ID,
             Globals::CURRENT_BUILDING => Globals::CURRENT_BUILDING_ID
         ]);
@@ -55,7 +56,8 @@ class HamletTheVillageBuildingGame extends Table
 
         self::setGameStateInitialValue(Globals::CURRENT_BUILDING, Building::TRADE_POST);
 
-        self::createBuildings();
+        self::setupBuildings();
+        self::setupPlayers($players);
 
         $this->activeNextPlayer();
     }
@@ -78,7 +80,7 @@ class HamletTheVillageBuildingGame extends Table
         return $buildingData;
     }
 
-    static function placeBuilding(int $buildingId, array $position, int $orientation, bool $positionCheck = true): array
+    static function placeBuilding(int $buildingId, array $position, int $orientation, bool $setup = false): array
     {
         [$x, $y, $z] = $position;
 
@@ -156,16 +158,18 @@ class HamletTheVillageBuildingGame extends Table
             }
         }
 
-        if ($positionCheck) {
+        if (!$setup) {
             $spaceArgs = implode(' OR ', $spaceChecks);
             $connectionArgs = implode(' OR ', $connectionChecks);
             $roadArgs = implode(' OR ', $roadChecks);
+
             $roadChecks = self::getObjectFromDb(<<<EOF
                 SELECT 
                     (SELECT COUNT(*) FROM board WHERE $spaceArgs) AS occupied,
                     (SELECT COUNT(*) FROM board WHERE $connectionArgs) AS connections,
                     (SELECT COUNT(*) FROM board WHERE $roadArgs) AS roads
                 EOF);
+
             if ((int)$roadChecks['occupied'] > 0) {
                 throw new BgaUserException('Occupied space');
             }
@@ -180,24 +184,52 @@ class HamletTheVillageBuildingGame extends Table
         $args = implode(',', $values);
         self::DbQuery("INSERT INTO board(x, y, z, edge_x, edge_y, edge_z, building_id) VALUES $args");
 
+        if (!$setup) {
+            self::DbQuery("INSERT INTO adjacency(building1_id, building2_id, road) VALUES $args");
+        }
+
         return $coords;
     }
 
-    static function createBuildings(): void
+    static function setupBuildings(): void
     {
+        $church = Building::CHURCH;
+        $connections = [];
         foreach (Building::SETUP as [$building, $position, $orientation]) {
-            self::placeBuilding($building, $position, $orientation, false);
+            self::placeBuilding($building, $position, $orientation, true);
+            if ($building !== Building::CHURCH) {
+                $connections[] = "($building,$church,2)";
+            }
         }
+        $args = implode(",", $connections);
+        self::DbQuery("INSERT INTO adjacency(building1_id, building2_id, road) VALUES $args");
+    }
+
+    static function setupPlayers(array $players): void
+    {
+        $church = Building::CHURCH;
+        $donkeys = [];
+        foreach ($players as $playerId => $_) {
+            $donkeys[] = "($playerId,$church)";
+        }
+        $args = implode(',', $donkeys);
+        self::DbQuery("INSERT INTO donkey(player_id, building_id) VALUES $args");
     }
 
     protected function getAllDatas()
     {
         $result = [];
 
-        $query = 'SELECT player_id AS id, player_score AS score FROM player ';
-        $result['players'] = self::getCollectionFromDb($query);
+        $result['round'] = self::getGameStateValue(Globals::ROUND_NUMBER);
+        $result['movedDonkeys'] = self::getGameStateValue(Globals::MOVED_DONKEYS);
+        $result['players'] = self::getCollectionFromDb(
+            'SELECT player_id AS id, player_score AS score, player_color AS color, player_no AS no FROM player ');
         $result['buildings'] = self::getObjectListFromDb(
             'SELECT building_id AS id, x, y, z, orientation FROM building');
+        $result['adjacency'] = self::getObjectListFromDb(
+            'SELECT building1_id AS `from`, building2_id AS `to`, road FROM adjacency');
+        $result['donkeys'] = self::getObjectListFromDb(
+            "SELECT donkey_id AS id, building_id AS buildingId, player_id AS playerId FROM donkey");
         $result['board'] = self::getObjectListFromDb('SELECT * FROM board');
 
         return $result;
@@ -216,9 +248,62 @@ class HamletTheVillageBuildingGame extends Table
         $this->gamestate->nextState('');
     }
 
-    function moveDonkey(int $id, int $tile): void
+    function move(int $donkeyId, int $buildingId): void
     {
+        self::checkAction('move');
 
+        $playerId = self::getActivePlayerId();
+        $count = self::getUniqueValueFromDb(
+            "SELECT COUNT(*) FROM donkey WHERE player_id = $playerId");
+        $movedDonkeys = self::getGameStateValue(Globals::MOVED_DONKEYS);
+        for ($i = 0; $i < $count; ++$i) {
+            $id = ($movedDonkeys >> DONKEY_BITS * $i & (0b1 << DONKEY_BITS) - 1);
+            if ($id === 0) {
+                break;
+            } else if ($id === $donkeyId) {
+                throw new BgaUserException("Donkey already moved");
+            }
+        }
+
+        (int)self::dbQuery(<<<EOF
+            UPDATE donkey INNER JOIN adjacency 
+                ON (building1_id = building_id AND building2_id = $buildingId 
+                    OR building2_id = building_id AND building1_id = $buildingId)
+            SET building_id = $buildingId
+            WHERE donkey_id = $donkeyId AND road > 0
+            EOF);
+
+        if (self::DbAffectedRow() === 0) {
+            throw new BgaUserException('Invalid move');
+        }
+
+        self::notifyAllPlayers('move', clienttranslate('${player_name} moves ${donkeyIcon} to ${buildingIcon}'), [
+            'player_name' => self::getActivePlayerId(),
+            'donkeyId' => $donkeyId,
+            'buildingId' => $buildingId,
+            'donkeyIcon' => $donkeyId,
+            'buildingIcon' => $buildingId,
+            'preserve' => ['donkeyIcon', 'buildingIcon']
+        ]);
+
+        $movedDonkeys |= $donkeyId << DONKEY_BITS * $i;
+        self::setGameStateValue(Globals::MOVED_DONKEYS, $movedDonkeys);
+
+        $this->gamestate->nextState($i < $count - 1 ? 'move' : 'end');
+    }
+
+    function skip(): void
+    {
+        self::checkAction('skip');
+        $this->gamestate->nextState('end');
+    }
+
+    function argMoveDonkey(): array
+    {
+        $movedDonkeys = self::getGameStateValue(Globals::MOVED_DONKEYS);
+        return [
+            'movedDonkeys' => $movedDonkeys
+        ];
     }
 
     function argPlaceBuilding(): array
@@ -232,8 +317,19 @@ class HamletTheVillageBuildingGame extends Table
 
     function stNextTurn(): void
     {
-        self::incGameStateValue(Globals::CURRENT_BUILDING, 1);
-        $this->gamestate->nextState('');
+        $no = self::getPlayerNoById(self::getActivePlayerId());
+        self::setGameStateValue(Globals::MOVED_DONKEYS, 0);
+
+        self::activeNextPlayer();
+        $this->gamestate->nextState(
+            $no >= self::getPlayersNumber() ? 'end' : 'next');
+    }
+
+    function stNextRound(): void
+    {
+        self::incGameStateValue(Globals::ROUND_NUMBER, 1);
+        self::notifyAllPlayers('message', clienttranslate('New round begins'), []);
+        $this->gamestate->nextState('next');
     }
 
     function zombieTurn($state, $active_player)
@@ -254,5 +350,10 @@ class HamletTheVillageBuildingGame extends Table
     function upgradeTableDb($from_version)
     {
 
-    }    
+    }
+
+    function dbgTurn()
+    {
+        $this->gamestate->jumpToState(State::NEXT_TURN);
+    }
 }

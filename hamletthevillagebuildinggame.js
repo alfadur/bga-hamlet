@@ -27,6 +27,12 @@ const Edge = Object.freeze({
     mountain: 3
 });
 
+function clearTag(tag) {
+    for (const element of document.querySelectorAll(`.${tag}`)) {
+        element.classList.remove(tag);
+    }
+}
+
 function createElement(parent, html) {
     const element = document.createElement("div");
     parent.appendChild(element);
@@ -62,6 +68,13 @@ function createBuilding(building, spaces) {
     return `<div id="${id}" style="${style}" class="hamlet-building" data-building="${building.id}"
             data-x="${building.x}" data-y="${building.y}" data-z="${building.z}">
         ${spaces.map(createSpace).join("")}
+    </div>`;
+}
+
+function createDonkey(donkey, color) {
+    return `<div id="hamlet-donkey-${donkey.id}"
+            style="background-color: #${color}" class="hamlet-donkey" 
+            data-id="${donkey.id}" data-owner="${donkey.playerId}" data-color="${color}">         
     </div>`;
 }
 
@@ -166,6 +179,7 @@ define([
 ], (dojo, declare) => declare(`bgagame.${gameName}`, ebg.core.gamegui, {
     constructor() {
         console.log(`${gameName} constructor`);
+        this.colors = [];
     },
 
     setup(data) {
@@ -173,6 +187,7 @@ define([
 
         for (const player_id of Object.keys(data.players)) {
             const player = data.players[player_id];
+            this.colors.push(player.color);
         }
 
         this.board = document.getElementById("hamlet-board");
@@ -182,6 +197,26 @@ define([
                 createBuilding(building, []));
 
             clipBuilding(element);
+            element.addEventListener("mousedown", event => {
+                event.stopPropagation();
+                this.onBuildingClick(element);
+            })
+        }
+
+        for (const donkey of data.donkeys) {
+            const building = document.querySelector(
+                `.hamlet-building[data-building="${donkey.buildingId}"]`);
+            const owner = data.players[donkey.playerId];
+            createElement(building, createDonkey(donkey, owner.color));
+        }
+
+        let movedDonkeys = parseInt(data.movedDonkeys);
+        while (movedDonkeys > 0) {
+            const donkey = document.getElementById(`hamlet-donkey-${movedDonkeys & 0b11111}`);
+            if (donkey) {
+                donkey.classList.add("hamlet-moved");
+            }
+            movedDonkeys >>= 5;
         }
 
         for (const space of data.board) {
@@ -205,7 +240,7 @@ define([
 
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
-                case 'placeBuilding': {
+                case "placeBuilding": {
                     console.log(state.args);
 
                     const building = {
@@ -235,6 +270,15 @@ define([
                 }
             }
         }
+
+        switch (stateName) {
+            case "nextTurn": {
+                for (const donkey of document.querySelectorAll(".hamlet-donkey")) {
+                    donkey.classList.remove("hamlet-moved");
+                }
+                break;
+            }
+        }
     },
 
     onLeavingState(stateName) {
@@ -242,6 +286,10 @@ define([
 
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
+                case "clientMove": {
+                    clearTag("hamlet-selected");
+                    break;
+                }
                 case "placeBuilding": {
                     this.currentBuilding.remove();
                     delete this.currentBuilding;
@@ -256,8 +304,14 @@ define([
 
         if (this.isCurrentPlayerActive()) {
             switch (stateName) {
+                case "moveDonkey": {
+                    this.addActionButton("hamlet-skip", _("Skip"), () => {
+                        this.request("skip");
+                    }, null, null, "gray");
+                    break;
+                }
                 case "placeBuilding": {
-                    this.addActionButton('hamlet-build', _("Build"), () => {
+                    this.addActionButton("hamlet-build", _("Build"), () => {
                         const orientation = this.currentOrientation >= 0 ?
                             this.currentOrientation % 6 :
                             (this.currentOrientation % 6 + 6) % 6;
@@ -290,6 +344,12 @@ define([
                     break;
                 }
             }
+
+            if (stateName.startsWith("client")) {{
+                this.addActionButton("hamlet-cancel", _("Cancel"), () => {
+                    this.restoreServerGameState();
+                }, null, null, "gray")
+            }}
         }
     },
 
@@ -351,7 +411,41 @@ define([
         });
     },
 
+    onBuildingClick(building) {
+        console.log("Building click", building);
+        if (this.checkAction("move", true)) {
+            building.classList.add("hamlet-selected")
+            this.setClientState("clientMove", {
+                descriptionmyturn: _("You must select the destination building"),
+                possibleactions: ["clientMove"]
+            });
+        } else if (this.checkAction("clientMove", true)) {
+            if (building.classList.contains("hamlet-selected")) {
+                this.restoreServerGameState();
+            } else {
+                const playerId = this.getCurrentPlayerId()
+                const donkey = document.querySelector(
+                    `.hamlet-building.hamlet-selected .hamlet-donkey[data-owner="${playerId}"]:not(.hamlet-moved)`);
+                if (donkey) {
+                    this.request("move", {
+                        donkeyId: donkey.dataset.id,
+                        buildingId: building.dataset.building
+                    });
+                }
+            }
+        }
+    },
+
     setupNotifications() {
         console.log("notifications subscriptions setup");
+        dojo.subscribe("move", this, ({args}) => {
+            console.log(args);
+            const donkey = document.getElementById(
+                `hamlet-donkey-${args.donkeyId}`);
+            const building = document.querySelector(
+                `.hamlet-building[data-building="${args.buildingId}"]`);
+            building.appendChild(donkey);
+            donkey.classList.add("hamlet-moved");
+        });
     }
 }));

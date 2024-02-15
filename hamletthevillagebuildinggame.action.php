@@ -33,7 +33,24 @@ class action_hamletthevillagebuildinggame extends APP_GameAction
             $this->view = 'hamletthevillagebuildinggame_hamletthevillagebuildinggame';
             self::trace( 'Complete reinitialization of board game' );
         }
-  	} 
+  	}
+
+    public function move()
+    {
+        self::setAjaxMode();
+        $donkeyId = self::getArg('donkeyId', AT_posint, true);
+        $buildingId = self::getArg('buildingId', AT_posint, true);
+        $this->game->move($donkeyId, $buildingId);
+        self::ajaxResponse();
+    }
+
+    public function skip()
+    {
+        self::setAjaxMode();
+        $this->game->skip();
+        self::ajaxResponse();
+    }
+
 
     public function build() {
         self::setAjaxMode();
@@ -42,15 +59,6 @@ class action_hamletthevillagebuildinggame extends APP_GameAction
         $z = self::getArg('z', AT_int, true);
         $orientation = self::getArg('orientation', AT_posint, true);
         $this->game->build($x, $y, $z, $orientation);
-        self::ajaxResponse();
-    }
-
-    public function moveDonkey()
-    {
-        self::setAjaxMode();
-        $id = self::getArg('id', AT_posint, true);
-        $tile = self::getArg('tile', AT_posint, true);
-        $this->game->moveDonkey($id, $tile);
         self::ajaxResponse();
     }
 }
