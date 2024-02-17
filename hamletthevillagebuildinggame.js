@@ -87,61 +87,61 @@ const buildingShapes = Object.freeze({
         xSpaces: 5,
         ySpaces: 4,
         spaceOffset: 1.5,
-        clip: [0, 0.5, 0.1, 0.25, 0.3, 0.25, 0.4, 0, 0.6, 0, 0.7, 0.25, 0.9, 0.25, 1, 0.5, 0.9, 0.75, 0.7, 0.75, 0.6, 1, 0.4, 1, 0.3, 0.75, 0.1, 0.75]
+        clip: [0, 0.5, 0.1, 0.25, 0.3, 0.25, 0.4, 0, 0.6, 0, 0.7, 0.25, 0.9, 0.25, 1, 0.5, 0.9, 0.75, 0.7, 0.75, 0.6, 1, 0.4, 1, 0.3, 0.75, 0.1, 0.75, 0, 0.5]
     },
     largeTriangle: {
         xSpaces: 3,
         ySpaces: 3,
         spaceOffset: 1,
-        clip: [0, 1, 0.5, 0, 1, 1]
+        clip: [0, 1, 0.5, 0, 1, 1, 0, 1]
     },
     smallTriangle: {
         xSpaces: 2,
         ySpaces: 2,
         spaceOffset: 0.5,
-        clip: [0, 1, 0.5, 0, 1, 1]
+        clip: [0, 1, 0.5, 0, 1, 1, 0, 1]
     },
     diamond: {
         xSpaces: 2,
         ySpaces: 4,
         spaceOffset: 0.5,
-        clip: [0, 0.5, 0.5, 0, 1, 0.5, 0.5, 1]
+        clip: [0, 0.5, 0.5, 0, 1, 0.5, 0.5, 1, 0, 0.5]
     },
     cutDiamond: {
         xSpaces: 2,
         ySpaces: 3,
         spaceOffset: 0.5,
-        clip: [0, 0.667, 0.5, 0, 1, 0.667, 0.75, 1, 0.25, 1]
+        clip: [0, 0.667, 0.5, 0, 1, 0.667, 0.75, 1, 0.25, 1, 0, 0.667]
     },
     flask: {
         xSpaces: 2,
         ySpaces: 3,
         spaceOffset: 0.5,
-        clip: [0, 0.667, 0.5, 0, 1, 0, 0.75, 0.333, 1, 0.667, 0.75, 1, 0.25, 1]
+        clip: [0, 0.667, 0.5, 0, 1, 0, 0.75, 0.333, 1, 0.667, 0.75, 1, 0.25, 1, 0, 0.667]
     },
     flag: {
         xSpaces: 2.5,
         ySpaces: 4,
         spaceOffset: 1,
-        clip: [0, 0.75, 0.6, 0, 1, 0.5, 0.6, 0.5, 0.8, 0.75, 0.6, 1, 0.2, 1]
+        clip: [0, 0.75, 0.6, 0, 1, 0.5, 0.6, 0.5, 0.8, 0.75, 0.6, 1, 0.2, 1, 0, 0.75]
     },
     hex: {
         xSpaces: 2,
         ySpaces: 2,
         spaceOffset: 0,
-        clip: [0, 0.5, 0.25, 0, 0.75, 0, 1, 0.50, 0.75, 1, 0.25, 1]
+        clip: [0, 0.5, 0.25, 0, 0.75, 0, 1, 0.50, 0.75, 1, 0.25, 1, 0, 0.5]
     },
     hexHalf: {
         xSpaces: 2,
         ySpaces: 3,
         spaceOffset: 0,
-        clip: [0, 0.333, 0.25, 0, 0.75, 0, 1, 0.333, 0.75, 0.667, 1, 1, 0, 1, 0.25, 0.667]
+        clip: [0, 0.333, 0.25, 0, 0.75, 0, 1, 0.333, 0.75, 0.667, 1, 1, 0, 1, 0.25, 0.667, 0, 0.333]
     },
     doubleHex: {
         xSpaces: 2,
         ySpaces: 4,
         spaceOffset: 0,
-        clip: [0, 0.25, 0.25, 0, 0.75, 0, 1, 0.25, 0.75, 0.5, 1, 0.75, 0.75, 1, 0.25, 1, 0, 0.75, 0.25, 0.50]
+        clip: [0, 0.25, 0.25, 0, 0.75, 0, 1, 0.25, 0.75, 0.5, 1, 0.75, 0.75, 1, 0.25, 1, 0, 0.75, 0.25, 0.50, 0, 0.25]
     }
 });
 
@@ -155,11 +155,32 @@ function clipBuilding(building) {
     const height = shape.ySpaces * parseInt(style.getPropertyValue("--space-height"));
     const clip = shape.clip;
 
-    const steps = [];
-    for (let i = 0; i < clip.length; i += 2) {
-        steps.push(`${clip[i] * width},${clip[i + 1] * height}`);
+    const radius = 8;
+    const steps = ["\"M"];
+    let firstX = 0;
+    let firstY = 0;
+
+    for (let i = 0; i < clip.length - 2; i += 2) {
+        const x0 = clip[i] * width;
+        const y0 = clip[i + 1] * height;
+        const x1 = clip[i + 2] * width;
+        const y1 = clip[i + 3] * height;
+        const length = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
+        const dx = (x1 - x0) / length;
+        const dy = (y1 - y0) / length;
+
+        steps.push(
+            `${x0 + dx * radius},${y0 + dy * radius}L${x0 + dx * (length - radius)},${y0 + dy * (length - radius)}Q${x1},${y1} `);
+
+        if (i === 0) {
+            firstX = x0 + dx * radius;
+            firstY = y0 + dy * radius;
+        } else if (i === clip.length - 4) {
+            steps.push(`${firstX},${firstY}"`)
+        }
     }
-    building.style.setProperty("--clip", `"M${steps.join(" ")}Z"`);
+
+    building.style.setProperty("--clip", steps.join(""));
 }
 
 function getBounds(spaces) {
