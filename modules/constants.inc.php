@@ -41,7 +41,22 @@ interface Globals
     const MOVED_DONKEYS_ID = 11;
     const CURRENT_BUILDING = 'currentBuilding';
     const CURRENT_BUILDING_ID = 12;
+    const BUILDINGS_DECK = 'buildingsDeck';
+    const BUILDINGS_DECK_ID = 13;
+    const AVAILABLE_BUILDINGS = 'availableBuildings';
+    const AVAILABLE_BUILDINGS_ID = 14;
 }
+
+const DECK_REMAINDERS = [
+    -1, 0, 1, 39, 2, 15, 40, 23,
+    3, 12, 16, 59, 41, 19, 24, 54,
+    4, 64, 13, 10, 17, 62, 60, 28,
+    42, 30, 20, 51, 25, 44, 55, 47,
+    5, 32, 65, 38, 14, 22, 11, 58,
+    18, 53, 63, 9, 61, 27, 29, 50,
+    43, 46, 31, 37, 21, 57, 52, 8,
+    26, 49, 45, 36, 56, 7, 48, 35,
+    6, 34, 33];
 
 const MAX_DONKEYS = 6;
 const DONKEY_BITS = 5; //npow2(MAX_DONKEYS * 4)
@@ -88,6 +103,19 @@ interface Building
         [self::FARM, [3, 1, -3], 3],
         [self::MARKET, [4, 0, -4], 0],
         [self::TOWN_HALL, [0, 3, -3], 0]
+    ];
+
+    const BASIC = [
+        self::SAWMILL,
+        self::STONEMASON,
+        self::FLOUR_MILL,
+        self::DAIRY_FARM,
+        self::SHRINE,
+        self::TRADE_POST,
+        self::FOREST_POND,
+        self::SMALL_WOODLAND,
+        self::MOUNTAIN_POND,
+        self::SMALL_MOUNTAIN_RANGE,
     ];
 }
 

@@ -21,7 +21,9 @@ class HamletTheVillageBuildingGame extends Table
         self::initGameStateLabels( [
             Globals::ROUND_NUMBER => Globals::ROUND_NUMBER_ID,
             Globals::MOVED_DONKEYS => Globals::MOVED_DONKEYS_ID,
-            Globals::CURRENT_BUILDING => Globals::CURRENT_BUILDING_ID
+            Globals::CURRENT_BUILDING => Globals::CURRENT_BUILDING_ID,
+            Globals::BUILDINGS_DECK => Globals::BUILDINGS_DECK_ID,
+            Globals::AVAILABLE_BUILDINGS => Globals::AVAILABLE_BUILDINGS_ID
         ]);
 	}
 	
@@ -195,6 +197,31 @@ class HamletTheVillageBuildingGame extends Table
         return $coords;
     }
 
+    static function deckDraw(int &$deck): int {
+        if ($deck <= 0) {
+            return -1;
+        }
+
+        $count = ($deck >> 1 & 0x5555555555555555) + ($deck & 0x5555555555555555);
+        $count = ($count >> 2 & 0x3333333333333333) + ($count & 0x3333333333333333);
+        $count = ($count >> 4 & 0x0F0F0F0F0F0F0F0F) + ($count & 0x0F0F0F0F0F0F0F0F);
+        $count = ($count >> 8 & 0x00FF00FF00FF00FF) + ($count & 0x00FF00FF00FF00FF);
+        $count = ($count >> 16 & 0x0000FFFF0000FFFF) + ($count & 0x0000FFFF0000FFFF);
+        $count = ($count >> 32) + ($count & 0x00000000FFFFFFFF);
+
+        $index = bga_rand(0, $count - 1);
+        $counter = $deck;
+
+        while (--$index >= 0) {
+            $counter -= $counter & -$counter;
+        }
+
+        $bit = $counter & -$counter;
+        $position = DECK_REMAINDERS[$bit % count(DECK_REMAINDERS)];
+        $deck -= $bit;
+        return $position;
+    }
+
     static function setupBuildings(): void
     {
         $church = Building::CHURCH;
@@ -218,6 +245,19 @@ class HamletTheVillageBuildingGame extends Table
 
         $args = implode(",", $products);
         self::DbQuery("INSERT INTO product(building_id, product_type, count) VALUES $args");
+
+        $deck = 0;
+        foreach (Building::BASIC as $buildingId) {
+            $deck |= 1 << $buildingId;
+        }
+
+        $display = 0;
+        for ($i = 0; $i < 4; ++$i) {
+            $display |= self::draw($deck) << $i * 5;
+        }
+
+        self::setGameStateValue(Globals::BUILDINGS_DECK, $deck);
+        self::setGameStateValue(Globals::AVAILABLE_BUILDINGS, $display);
     }
 
     static function setupPlayers(array $players): void
@@ -237,6 +277,7 @@ class HamletTheVillageBuildingGame extends Table
 
         $result['round'] = self::getGameStateValue(Globals::ROUND_NUMBER);
         $result['movedDonkeys'] = self::getGameStateValue(Globals::MOVED_DONKEYS);
+        $result['availableBuildings'] = self::getGameStateValue(Globals::AVAILABLE_BUILDINGS);
         $result['players'] = self::getCollectionFromDb(<<<'EOF'
             SELECT player_id AS id, player_score AS score, 
                 player_color AS color, player_no AS no, coins 
